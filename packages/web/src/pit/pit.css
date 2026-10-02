@@ -1,0 +1,982 @@
+/* Pit crew screen: light, high contrast, big touch targets. Built for a phone in a bright gym. */
+
+.pit {
+  --p-bg: #f4f5f7;
+  --p-card: #ffffff;
+  --p-line: #d9dde3;
+  --p-fg: #14171c;
+  --p-muted: #5f6672;
+  --p-accent: #1f6feb;
+  --p-good: #1a8f4c;
+  --p-bad: #d1262e;
+  --p-warn: #c47a00;
+  --p-radius: 14px;
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--p-bg);
+  color: var(--p-fg);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 17px;
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: 100px;
+}
+
+.pit-loading {
+  display: grid;
+  place-items: center;
+  color: var(--p-muted);
+}
+
+.pit h1,
+.pit h2,
+.pit h3 {
+  margin: 0;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--p-fg);
+}
+
+.pit h1 {
+  font-size: 1.3rem;
+}
+
+.pit h2 {
+  font-size: 1.35rem;
+}
+
+.pit h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--p-muted);
+  margin-bottom: 0.6rem;
+}
+
+.pit input,
+.pit select,
+.pit textarea {
+  background: #fff;
+  color: var(--p-fg);
+  border: 1.5px solid var(--p-line);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  font: inherit;
+  width: 100%;
+  min-width: 0;
+}
+
+.pit input:focus,
+.pit select:focus,
+.pit textarea:focus {
+  outline: 3px solid rgba(31, 111, 235, 0.35);
+  border-color: var(--p-accent);
+}
+
+.pit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem 1rem 0.5rem;
+}
+
+.pit-kicker {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--p-accent);
+}
+
+.pit-stats {
+  display: flex;
+  gap: 0.75rem;
+  color: var(--p-muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.pit-stats b {
+  color: var(--p-fg);
+  font-size: 1.05rem;
+}
+
+.pit-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--p-bg);
+  padding: 0.5rem 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pit-search {
+  font-size: 1.1rem;
+}
+
+.pit-chips {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.pit-chip {
+  border: 1.5px solid var(--p-line);
+  background: #fff;
+  color: var(--p-muted);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pit-chip.is-active {
+  background: var(--p-fg);
+  border-color: var(--p-fg);
+  color: #fff;
+}
+
+.pit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pit-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 52px 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--p-card);
+  border: 1.5px solid var(--p-line);
+  border-radius: var(--p-radius);
+  padding: 0.6rem 0.8rem;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pit-row.is-in {
+  border-left: 6px solid var(--p-good);
+}
+
+.pit-row-num {
+  font-weight: 800;
+  font-size: 1.3rem;
+}
+
+.pit-row-thumb {
+  width: 52px;
+  height: 26px;
+  background: #eceef2;
+  border-radius: 6px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.pit-row-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pit-row-name {
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pit-row-name small {
+  display: block;
+  font-weight: 400;
+  color: var(--p-muted);
+  font-size: 0.8rem;
+}
+
+.pit-row-flags {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.pit-row-flags i {
+  font-style: normal;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+  background: #eceef2;
+  color: var(--p-muted);
+}
+
+.pit-row-flags i.on {
+  background: #dff3e7;
+  color: var(--p-good);
+}
+
+.pit-row-flags i.bad {
+  background: #fde3e4;
+  color: var(--p-bad);
+}
+
+.pit-empty {
+  color: var(--p-muted);
+  text-align: center;
+  padding: 2rem;
+}
+
+.pit-fab {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 3;
+  background: var(--p-accent);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.9rem 1.3rem;
+  font: inherit;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(31, 111, 235, 0.35);
+}
+
+.pit-fab-demo {
+  left: 1rem;
+  right: auto;
+  background: var(--p-fg);
+  box-shadow: none;
+}
+
+.pit-fab[hidden] {
+  display: none;
+}
+
+/* ---- detail ------------------------------------------------------------- */
+
+.pit-detail {
+  padding: 0.75rem 1rem;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.pit-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pit-sub {
+  color: var(--p-muted);
+  font-size: 0.9rem;
+}
+
+.pit-card {
+  background: var(--p-card);
+  border: 1.5px solid var(--p-line);
+  border-radius: var(--p-radius);
+  padding: 0.9rem 1rem;
+}
+
+.pbtn {
+  border: 1.5px solid var(--p-line);
+  background: #fff;
+  color: var(--p-fg);
+  border-radius: 12px;
+  padding: 0.75rem 1.1rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.pbtn:disabled {
+  opacity: 0.5;
+}
+
+.pbtn-primary {
+  background: var(--p-accent);
+  border-color: var(--p-accent);
+  color: #fff;
+}
+
+.pbtn-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--p-accent);
+  padding-left: 0.4rem;
+}
+
+.pit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.pit-checkin {
+  border: 0;
+  border-radius: var(--p-radius);
+  padding: 1.1rem;
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 800;
+  background: var(--p-fg);
+  color: #fff;
+  cursor: pointer;
+}
+
+.pit-checkin.is-in {
+  background: var(--p-good);
+}
+
+.pit-photo-empty {
+  color: var(--p-muted);
+}
+
+.pit-weight {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pit-weight input {
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.pit-unit {
+  color: var(--p-muted);
+  font-weight: 700;
+}
+
+.pit-badge {
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  background: #eceef2;
+  color: var(--p-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.pit-badge.is-good {
+  background: #dff3e7;
+  color: var(--p-good);
+}
+
+.pit-badge.is-bad {
+  background: #fde3e4;
+  color: var(--p-bad);
+}
+
+.pit-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.pit-check {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: left;
+  background: #fff;
+  border: 1.5px solid var(--p-line);
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pit-check small {
+  display: block;
+  color: var(--p-muted);
+  font-size: 0.8rem;
+}
+
+.pit-check-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #eceef2;
+  font-weight: 800;
+}
+
+.pit-check.is-pass {
+  border-color: var(--p-good);
+}
+
+.pit-check.is-pass .pit-check-mark {
+  background: var(--p-good);
+  color: #fff;
+}
+
+.pit-check.is-fail {
+  border-color: var(--p-bad);
+}
+
+.pit-check.is-fail .pit-check-mark {
+  background: var(--p-bad);
+  color: #fff;
+}
+
+.pit-status {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.pit-status .pbtn {
+  padding: 0.6rem 0.4rem;
+  font-size: 0.9rem;
+}
+
+.pit-status .status-passed.is-active {
+  background: var(--p-good);
+  border-color: var(--p-good);
+  color: #fff;
+}
+
+.pit-status .status-needs-work.is-active {
+  background: var(--p-warn);
+  border-color: var(--p-warn);
+  color: #fff;
+}
+
+.pit-status .status-failed.is-active {
+  background: var(--p-bad);
+  border-color: var(--p-bad);
+  color: #fff;
+}
+
+.pit-hint {
+  margin: 0.6rem 0 0;
+  color: var(--p-good);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.pit-hint.is-warn {
+  color: var(--p-bad);
+}
+
+.pit textarea {
+  margin-top: 0.6rem;
+  resize: vertical;
+}
+
+.pit-field {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 0.6rem;
+}
+
+.pit-field span {
+  font-size: 0.8rem;
+  color: var(--p-muted);
+  font-weight: 600;
+}
+
+.pit-add {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 3;
+  display: grid;
+  gap: 0.5rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* ---- secure hint ---------------------------------------------------------- */
+
+.pit-secure-hint {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.8rem;
+  background: #fff4d6;
+  border: 1.5px solid #f0c36d;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: #5a3d00;
+}
+
+.pit-secure-hint a {
+  color: #1f6feb;
+  font-weight: 600;
+}
+
+.pit-secure-banner {
+  margin: 0.5rem 1rem;
+}
+
+/* ---- live camera ------------------------------------------------------------ */
+
+.cam {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #000;
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+
+.cam-box {
+  position: relative;
+  overflow: hidden;
+}
+
+.cam-box video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cam-frame {
+  position: absolute;
+  left: 4%;
+  width: 92%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+}
+
+.cam-guide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: rgba(255, 255, 255, 0.14);
+  stroke: rgba(255, 255, 255, 0.95);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.cam-corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 4px solid #1f6feb;
+}
+
+.cam-corner.tl {
+  top: -4px;
+  left: -4px;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.cam-corner.tr {
+  top: -4px;
+  right: -4px;
+  border-left: 0;
+  border-bottom: 0;
+}
+
+.cam-corner.bl {
+  bottom: -4px;
+  left: -4px;
+  border-right: 0;
+  border-top: 0;
+}
+
+.cam-corner.br {
+  bottom: -4px;
+  right: -4px;
+  border-left: 0;
+  border-top: 0;
+}
+
+.cam-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: max(12px, env(safe-area-inset-top));
+  text-align: center;
+  color: #fff;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  padding: 0 1rem;
+}
+
+.cam-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  justify-items: center;
+  padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  background: #000;
+}
+
+.cam-side {
+  background: #222;
+  border-color: #333;
+  color: #fff;
+}
+
+.cam-shutter {
+  width: 78px;
+  height: 78px;
+  border-radius: 999px;
+  border: 5px solid #fff;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.cam-shutter span {
+  width: 60px;
+  height: 60px;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.cam-shutter:disabled {
+  opacity: 0.4;
+}
+
+/* A step of the photo flow covering the page (keeps the component mounted). */
+.pit-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  overflow-y: auto;
+  background: var(--p-bg);
+  padding-bottom: 2rem;
+}
+
+/* ---- car photo ------------------------------------------------------------ */
+
+.shot-image {
+  display: block;
+  width: 100%;
+  border: 1.5px dashed var(--p-line);
+  border-radius: 10px;
+  background:
+    linear-gradient(45deg, #e9ebef 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, #e9ebef 25%, transparent 25%) 0 8px / 16px 16px,
+    linear-gradient(45deg, transparent 75%, #e9ebef 75%) 8px -8px / 16px 16px,
+    linear-gradient(-45deg, transparent 75%, #e9ebef 75%) -8px 0 / 16px 16px,
+    #f7f8fa;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+}
+
+.shot-tile.has-shot .shot-image {
+  border-style: solid;
+}
+
+.shot-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.shot-image img.is-cutout {
+  object-fit: contain;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.35));
+}
+
+.shot-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: 2rem;
+  color: var(--p-muted);
+}
+
+.shot-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.shot-caption small {
+  color: var(--p-muted);
+  font-weight: 400;
+}
+
+.shot-remove {
+  border: 0;
+  background: transparent;
+  color: var(--p-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+}
+
+/* ---- mask editor ---------------------------------------------------------- */
+
+.maskx {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.maskx-stage {
+  background:
+    linear-gradient(45deg, #d9dde3 25%, transparent 25%) 0 0 / 20px 20px,
+    linear-gradient(-45deg, #d9dde3 25%, transparent 25%) 0 10px / 20px 20px,
+    linear-gradient(45deg, transparent 75%, #d9dde3 75%) 10px -10px / 20px 20px,
+    linear-gradient(-45deg, transparent 75%, #d9dde3 75%) -10px 0 / 20px 20px,
+    #f4f5f7;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid var(--p-line);
+}
+
+.maskx-canvas {
+  display: block;
+  width: 100%;
+  touch-action: none;
+}
+
+.maskx-canvas.tool-erase,
+.maskx-canvas.tool-restore {
+  cursor: crosshair;
+}
+
+.maskx-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--p-muted);
+}
+
+.maskx-row input[type='range'] {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  accent-color: var(--p-accent);
+}
+
+.maskx-tools {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+
+.maskx-tools .pbtn {
+  padding: 0.6rem 0.4rem;
+  font-size: 0.9rem;
+}
+
+.maskx-tools .pbtn.is-active {
+  background: var(--p-fg);
+  border-color: var(--p-fg);
+  color: #fff;
+}
+
+/* ---- scout video --------------------------------------------------------- */
+
+.pit-headshot {
+  aspect-ratio: 16 / 9;
+  background: #eceef2;
+  border-radius: 10px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.pit-headshot video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.headshot-live {
+  transform: scaleX(-1);
+}
+
+.headshot-review {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.headshot-guide {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(60vw, 46vh);
+  aspect-ratio: 3 / 4;
+  transform: translate(-50%, -50%);
+  border: 3px dashed rgba(255, 255, 255, 0.85);
+  border-radius: 50% / 40%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.headshot-count {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 40vw;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.headshot-rec {
+  position: absolute;
+  top: max(52px, calc(env(safe-area-inset-top) + 40px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(209, 38, 46, 0.9);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.4rem;
+  padding: 0.3rem 1rem;
+  border-radius: 999px;
+}
+
+.headshot-rec-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  animation: headshot-blink 1s steps(2, start) infinite;
+}
+
+@keyframes headshot-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+.cam-shutter.is-video span {
+  background: #d1262e;
+}
+
+.headshot-spacer {
+  border: 0;
+  background: transparent;
+  color: #aaa;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ---- crop editor -------------------------------------------------------- */
+
+.crop {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.crop-hint {
+  margin: 0;
+  color: var(--p-muted);
+  font-size: 0.9rem;
+}
+
+.crop-frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #222;
+  touch-action: none;
+  cursor: grab;
+  outline: 3px solid var(--p-accent);
+}
+
+.crop-frame img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  max-width: none;
+  pointer-events: none;
+}
+
+.crop-guide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  fill: rgba(255, 255, 255, 0.12);
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.crop-zoom {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  accent-color: var(--p-accent);
+}
+
+.pit-over {
+  color: var(--p-bad);
+  font-weight: 700;
+}
+
+/* ---- wheel fit ------------------------------------------------------------- */
+
+.pit-badge {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--p-good, #1f9d55);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+.pit-link {
+  margin-left: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--p-accent);
+  font: inherit;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}

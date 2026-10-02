@@ -1,0 +1,411 @@
+1
+00:00:00,000 --> 00:00:03,048
+Welcome to the Pinewood Derby race manager.
+
+2
+00:00:03,048 --> 00:00:09,143
+One laptop runs everything: it keeps the roster and results, talks to the track timer,
+
+3
+00:00:09,143 --> 00:00:11,695
+and serves a web page for every job.
+
+4
+00:00:11,695 --> 00:00:15,310
+The race coordinator runs the show from the laptop.
+
+5
+00:00:15,310 --> 00:00:18,145
+The projector shows the audience screen.
+
+6
+00:00:18,145 --> 00:00:21,406
+The pit crew checks cars in from their phones.
+
+7
+00:00:21,406 --> 00:00:24,099
+Judges pick design awards on a tablet.
+
+8
+00:00:24,099 --> 00:00:28,068
+And a camera at the finish line records instant replays.
+
+9
+00:00:28,068 --> 00:00:32,817
+All of it works over a local Wi-Fi network with no internet at all.
+
+10
+00:00:32,817 --> 00:00:37,070
+This video walks through setup, race day, and every feature.
+
+11
+00:00:37,070 --> 00:00:39,917
+Race day starts with one double-click.
+
+12
+00:00:39,917 --> 00:00:45,835
+Start Derby dot C M D installs what it needs the first time, starts the server,
+
+13
+00:00:45,835 --> 00:00:47,633
+and opens the home page.
+
+14
+00:00:47,633 --> 00:00:54,375
+Allow Through Firewall dot C M D, run once as administrator, lets phones reach the laptop.
+
+15
+00:00:54,375 --> 00:00:59,994
+The first time you open the coordinator, it points you to the setup wizard.
+
+16
+00:00:59,994 --> 00:01:06,362
+The wizard walks through nine steps and checks each one live: the event, the network,
+
+17
+00:01:06,362 --> 00:01:13,404
+the projector, the phones, the replay camera, the timer, the roster, a dry run, and a summary.
+
+18
+00:01:13,404 --> 00:01:15,726
+Green means verified right now.
+
+19
+00:01:15,726 --> 00:01:19,622
+Amber means connected but something needs attention.
+
+20
+00:01:19,622 --> 00:01:21,420
+Grey means not seen yet.
+
+21
+00:01:21,420 --> 00:01:23,754
+Everything needs one local network.
+
+22
+00:01:23,754 --> 00:01:26,155
+A small router is the most reliable.
+
+23
+00:01:26,155 --> 00:01:29,623
+The Windows mobile hotspot on the laptop also works,
+
+24
+00:01:29,623 --> 00:01:32,824
+and the laptop then always has the same address.
+
+25
+00:01:32,824 --> 00:01:35,625
+Phones scan a QR code to reach their page;
+
+26
+00:01:35,625 --> 00:01:39,226
+the codes are on the home page and on the coordinator.
+
+27
+00:01:39,226 --> 00:01:42,160
+Phone cameras only work on a secure address,
+
+28
+00:01:42,160 --> 00:01:47,229
+so each phone does a one-time certificate install from the phone setup page.
+
+29
+00:01:47,229 --> 00:01:51,964
+After that the pit crew and replay pages open the live camera directly.
+
+30
+00:01:51,964 --> 00:01:57,966
+The wizard shows which phones are connected, whether they came in over the secure address,
+
+31
+00:01:57,966 --> 00:02:00,500
+and whether their camera is available.
+
+32
+00:02:00,500 --> 00:02:04,208
+The roster tab holds the pack: dens, racers, cars.
+
+33
+00:02:04,208 --> 00:02:10,586
+Import a C S V from your pack spreadsheet, and the columns are detected automatically,
+
+34
+00:02:10,586 --> 00:02:11,847
+or type names in.
+
+35
+00:02:11,847 --> 00:02:13,998
+Each racer gets a car number.
+
+36
+00:02:13,998 --> 00:02:20,820
+An open class for siblings and adults gets its own round and never races against the scouts.
+
+37
+00:02:20,820 --> 00:02:23,713
+On the setup tab, pick the race format.
+
+38
+00:02:23,713 --> 00:02:30,462
+The default runs each den on its own, every car in every lane once, ranked by average time,
+
+39
+00:02:30,462 --> 00:02:34,540
+then sends the top three from each den to a pack final.
+
+40
+00:02:34,540 --> 00:02:39,806
+Other presets race the whole pack together, by time or by place points.
+
+41
+00:02:39,806 --> 00:02:42,550
+The format locks once heats have run.
+
+42
+00:02:42,550 --> 00:02:45,952
+On race morning the pit crew works from a phone.
+
+43
+00:02:45,952 --> 00:02:48,148
+Find the car by number or name.
+
+44
+00:02:48,148 --> 00:02:50,133
+One tap checks the scout in.
+
+45
+00:02:50,133 --> 00:02:53,818
+Type the weight; anything over the limit is flagged.
+
+46
+00:02:53,818 --> 00:02:59,770
+Tap through the inspection checklist and mark the car passed, needs work, or failed.
+
+47
+00:02:59,770 --> 00:03:03,739
+Take the car photo: the live camera shows a car outline,
+
+48
+00:03:03,739 --> 00:03:07,920
+so every photo comes out the same shape for the big screen.
+
+49
+00:03:07,920 --> 00:03:11,038
+Record a few seconds of the scout saying hi;
+
+50
+00:03:11,038 --> 00:03:14,935
+it plays in their spotlight and when they win an award.
+
+51
+00:03:14,935 --> 00:03:17,770
+Walk-up racers can be added right there.
+
+52
+00:03:17,770 --> 00:03:20,439
+The race tab is the coordinator's home.
+
+53
+00:03:20,439 --> 00:03:21,192
+At the top,
+
+54
+00:03:21,192 --> 00:03:27,968
+the "on the projector" strip says what the audience is seeing and has one button for the next step.
+
+55
+00:03:27,968 --> 00:03:29,131
+Click Start race,
+
+56
+00:03:29,131 --> 00:03:34,469
+and the projector shows the round's title card with every car parading across.
+
+57
+00:03:34,469 --> 00:03:37,686
+When the cars are on the pins, click Arm timer.
+
+58
+00:03:37,686 --> 00:03:41,724
+The audience sees Next up, with one racer in the spotlight;
+
+59
+00:03:41,724 --> 00:03:45,899
+the spotlight rotates so every scout gets one during the day.
+
+60
+00:03:45,899 --> 00:03:51,100
+Click Start countdown: a drag race light tree runs, three ambers then green,
+
+61
+00:03:51,100 --> 00:03:53,701
+and the scout opens the gate on green.
+
+62
+00:03:53,701 --> 00:03:59,518
+The timer reports the start, times pop in as cars cross, and the heat records itself.
+
+63
+00:03:59,518 --> 00:04:03,830
+The result holds, then the instant replay plays in slow motion,
+
+64
+00:04:03,830 --> 00:04:09,031
+then the next lineup appears with Now staging, telling the scouts who is up.
+
+65
+00:04:09,031 --> 00:04:10,263
+Keep arming heats.
+
+66
+00:04:10,263 --> 00:04:15,670
+When the round's last heat is done, the projector shows that round's standings,
+
+67
+00:04:15,670 --> 00:04:17,860
+and the button reads Next round.
+
+68
+00:04:17,860 --> 00:04:22,312
+Races have hiccups, and the coordinator has a button for each one.
+
+69
+00:04:22,312 --> 00:04:27,910
+A car that does not finish: every lane still out shows a D N F button while racing,
+
+70
+00:04:27,910 --> 00:04:33,644
+and after the heat timeout a prompt asks whether to record the D N F or keep waiting.
+
+71
+00:04:33,644 --> 00:04:39,175
+A car jumped the track: Re-run this heat voids it and puts an identical heat next.
+
+72
+00:04:39,175 --> 00:04:41,940
+A wrong time, or the wrong car on a lane:
+
+73
+00:04:41,940 --> 00:04:47,336
+Fix times lets you edit each lane's time and pick the car that was really there;
+
+74
+00:04:47,336 --> 00:04:53,002
+the remaining heats re-plan themselves so every car still gets its full set of runs.
+
+75
+00:04:53,002 --> 00:04:57,994
+A lane sensor dies: mark it out on the setup tab, and the schedule adapts.
+
+76
+00:04:57,994 --> 00:05:02,850
+Every change is snapshotted, so an earlier state can always be restored.
+
+77
+00:05:02,850 --> 00:05:08,187
+The replay camera can be a webcam on the race laptop, a laptop at the finish line,
+
+78
+00:05:08,187 --> 00:05:09,684
+or a phone on a tripod.
+
+79
+00:05:09,684 --> 00:05:14,371
+On the audience tab, tick "use this computer's webcam" and you are done.
+
+80
+00:05:14,371 --> 00:05:17,039
+For a phone, scan the replay camera code.
+
+81
+00:05:17,039 --> 00:05:25,240
+Recording starts just before the fastest car of the day could reach the line and stops right after the last car that finishes,
+
+82
+00:05:25,240 --> 00:05:28,755
+so a car that never finishes never drags the clip out.
+
+83
+00:05:28,755 --> 00:05:36,110
+The clip is converted on the server and plays on the projector at half speed with the finishing order underneath.
+
+84
+00:05:36,110 --> 00:05:39,820
+The coordinator can put any heat's replay back on screen.
+
+85
+00:05:39,820 --> 00:05:44,620
+Judges use their own page, usually on a tablet by the display table.
+
+86
+00:05:44,620 --> 00:05:50,973
+Add awards from the preset list, like Best in Show or Most Colorful, or type a custom one,
+
+87
+00:05:50,973 --> 00:05:52,597
+optionally for one den.
+
+88
+00:05:52,597 --> 00:05:55,350
+Select an award, tap the car that wins,
+
+89
+00:05:55,350 --> 00:06:01,421
+and the card notes anything else that car has already won so awards get spread around.
+
+90
+00:06:01,421 --> 00:06:04,668
+Speed awards fill themselves from the results.
+
+91
+00:06:04,668 --> 00:06:09,327
+After the last round the coordinator clicks Start awards ceremony.
+
+92
+00:06:09,327 --> 00:06:14,621
+The projector shows the awards card, and each click reveals the next award:
+
+93
+00:06:14,621 --> 00:06:21,186
+design awards first, then den champions, then third, second, and first place onto the podium,
+
+94
+00:06:21,186 --> 00:06:24,010
+with the scout's video beside their car.
+
+95
+00:06:24,010 --> 00:06:26,368
+Heat sheets, standings, the roster,
+
+96
+00:06:26,368 --> 00:06:31,287
+and the awards list all print from plain pages linked on the coordinator.
+
+97
+00:06:31,287 --> 00:06:32,837
+When rehearsal is over,
+
+98
+00:06:32,837 --> 00:06:38,228
+Reset races on the setup tab clears every round and result but keeps the roster,
+
+99
+00:06:38,228 --> 00:06:41,799
+so you can run the whole show again the next morning.
+
+100
+00:06:41,799 --> 00:06:45,573
+Every screen you saw is a web page served by the laptop,
+
+101
+00:06:45,573 --> 00:06:49,144
+so any device on the network with a browser can join.
+
+102
+00:06:49,144 --> 00:06:50,290
+That is the tour.
+
+103
+00:06:50,290 --> 00:06:51,570
+Have a great derby.

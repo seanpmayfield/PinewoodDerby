@@ -1,0 +1,12 @@
+{
+  "extends": "../packages/server/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "../packages/server/src",
+    "outDir": "stage/packages/server/dist",
+    "declaration": false,
+    "sourceMap": false,
+    "removeComments": true
+  },
+  "include": ["../packages/server/src/**/*.ts"]
+}

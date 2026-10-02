@@ -1,0 +1,23 @@
+node_modules/
+# Installer build products
+/installer/stage/
+/installer/out/
+dist/
+*.log
+.DS_Store
+
+# Event data (database, photos, clips, certificates). DERBY_DATA_DIR can move it elsewhere.
+data/
+*.sqlite
+
+# Tutorial video: the mp4 is built with `npm run tutorial`; the script and captions are kept.
+docs/tutorial/*.mp4
+docs/tutorial/build/
+
+# Theme previews: the per-screen renders are rebuilt with `npm run theme-previews`; only the contact sheets are kept.
+docs/themes/*.png
+!docs/themes/*-sheet.png
+
+# CAD and other personal files kept in the folder but not in the repo
+*.STEP
+*.step

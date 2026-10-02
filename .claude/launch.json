@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "derby-server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start", "-w", "@derby/server"],
+      "port": 8080
+    },
+    {
+      "name": "derby-web-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "-w", "@derby/web"],
+      "port": 5173
+    }
+  ]
+}

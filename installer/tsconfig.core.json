@@ -1,0 +1,12 @@
+{
+  "extends": "../packages/core/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "../packages/core/src",
+    "outDir": "stage/packages/core/dist",
+    "declaration": false,
+    "sourceMap": false,
+    "removeComments": true
+  },
+  "include": ["../packages/core/src/**/*.ts"]
+}

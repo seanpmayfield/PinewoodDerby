@@ -1,0 +1,591 @@
+/* Judges screen: shares the light pit theme; tablet or laptop at the judging table. */
+
+.jud-layout {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.5rem 1rem 2rem;
+}
+
+@media (max-width: 860px) {
+  .jud-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.jud-awards {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.jud-muted {
+  color: var(--p-muted);
+}
+
+.jud-empty {
+  color: var(--p-muted);
+  margin: 0.5rem 0;
+}
+
+.jud-award-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.jud-award {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  border: 1.5px solid var(--p-line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.jud-award.is-selected {
+  border-color: var(--p-accent);
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.2);
+}
+
+.jud-award.has-winner .jud-award-name::before {
+  content: '★ ';
+  color: var(--p-warn);
+}
+
+.jud-award-main {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.jud-award-name {
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jud-award-name small {
+  display: block;
+  font-weight: 400;
+  color: var(--p-muted);
+  font-size: 0.78rem;
+}
+
+.jud-award-winner {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.jud-thumb {
+  width: 48px;
+  height: 22px;
+  display: block;
+}
+
+.jud-thumb .aud-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.jud-award-tools {
+  display: grid;
+  grid-auto-flow: row;
+  border-left: 1.5px solid var(--p-line);
+}
+
+.jud-award-tools button {
+  border: 0;
+  background: #f4f5f7;
+  color: var(--p-muted);
+  font-size: 0.7rem;
+  padding: 0 0.6rem;
+  cursor: pointer;
+}
+
+.jud-award-tools button:hover {
+  background: #e6e8ec;
+  color: var(--p-fg);
+}
+
+.jud-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.jud-custom {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
+}
+
+.jud-speed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jud-speed li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--p-line);
+  font-size: 0.9rem;
+}
+
+.jud-gallery-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.jud-gallery-head p {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+}
+
+.jud-filters {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 260px;
+}
+
+.jud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.75rem;
+}
+
+.jud-car {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  text-align: left;
+  background: #fff;
+  border: 2px solid var(--p-line);
+  border-radius: var(--p-radius);
+  padding: 0;
+  overflow: hidden;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+}
+
+.jud-car.is-pickable {
+  cursor: pointer;
+}
+
+.jud-car.is-pickable:hover {
+  border-color: var(--p-accent);
+}
+
+.jud-car.is-winner {
+  border-color: var(--p-warn);
+  box-shadow: 0 0 0 3px rgba(196, 122, 0, 0.25);
+}
+
+.jud-car-photo {
+  position: relative;
+  aspect-ratio: 2.4;
+  background: #eceef2;
+  display: grid;
+  place-items: center;
+}
+
+.jud-car-photo .aud-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.jud-car-photo .aud-portrait-svg {
+  width: 80%;
+  height: auto;
+}
+
+.jud-ribbon {
+  position: absolute;
+  top: 8px;
+  left: -28px;
+  transform: rotate(-30deg);
+  background: var(--p-warn);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.2rem 2.2rem;
+}
+
+.jud-car-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.5rem 0.7rem;
+}
+
+.jud-car-num {
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+
+.jud-car-name {
+  font-weight: 600;
+  min-width: 0;
+}
+
+.jud-car-name small {
+  display: block;
+  font-weight: 400;
+  color: var(--p-muted);
+  font-size: 0.78rem;
+}
+
+.jud-car-wins {
+  padding: 0 0.7rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--p-warn);
+}
+
+/* ---- judging aids: seen ticks, shortlist, rubric --------------------------- */
+
+.jud-car-pick {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: inherit;
+}
+
+.jud-car.is-seen .jud-car-photo::after {
+  content: '✓';
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--p-ok, #1f9d55);
+  color: #fff;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+}
+
+.jud-car.is-nominee {
+  border-color: #e0a800;
+}
+
+.jud-star {
+  position: absolute;
+  left: 8px;
+  top: 6px;
+  color: #e0a800;
+  font-size: 1.4rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.jud-car-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.6rem 0.55rem;
+  border-top: 1px solid var(--p-line);
+  background: #f7f8fb;
+}
+
+.jud-seen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--p-muted);
+  cursor: pointer;
+}
+
+.jud-seen.is-on {
+  color: var(--p-ok, #1f9d55);
+}
+
+.jud-seen input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.jud-tool {
+  margin-left: auto;
+  background: #fff;
+  border: 1px solid var(--p-line);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+}
+
+.jud-tool + .jud-tool {
+  margin-left: 0;
+}
+
+.jud-tool.is-on {
+  background: #fff4cc;
+  border-color: #e0a800;
+  color: #7a5a00;
+}
+
+.jud-help {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.jud-criteria {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+}
+
+.jud-criteria li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--p-line);
+}
+
+.jud-criteria button {
+  background: none;
+  border: 0;
+  color: var(--p-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.jud-custom input[type='number'] {
+  width: 64px;
+  flex: none;
+}
+
+.jud-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  background: rgba(20, 30, 50, 0.5);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.jud-modal {
+  background: #fff;
+  border-radius: var(--p-radius);
+  width: min(560px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: 1rem 1.1rem 1.1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.jud-photo-modal {
+  width: min(720px, 100%);
+}
+
+.jud-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.jud-modal-head h3 {
+  margin: 0;
+}
+
+.jud-total {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.jud-total small {
+  font-size: 1rem;
+  color: var(--p-muted);
+  font-weight: 600;
+}
+
+.jud-sheet-photo {
+  aspect-ratio: 2.6;
+  background: #eceef2;
+  border-radius: 10px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.jud-sheet-photo .aud-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.jud-sheet-photo .aud-portrait-svg {
+  width: 60%;
+  height: auto;
+}
+
+.jud-sheet-row {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--p-line);
+}
+
+.jud-sheet-label {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.jud-sheet-label small {
+  font-weight: 500;
+}
+
+.jud-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.jud-step {
+  flex: 1 0 36px;
+  min-height: 40px;
+  border: 2px solid var(--p-line);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.jud-step.is-under {
+  background: #fff4cc;
+  border-color: #f0d264;
+}
+
+.jud-step.is-on {
+  background: #e0a800;
+  border-color: #b98700;
+  color: #fff;
+}
+
+.jud-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+/* ---- several judges --------------------------------------------------------- */
+
+.jud-judge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.jud-judge select {
+  font: inherit;
+  font-weight: 700;
+  border: 1px solid var(--p-line);
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  background: #fff;
+  max-width: 11rem;
+}
+
+.jud-judge.is-unset select {
+  border-color: #e0a800;
+  background: #fff4cc;
+}
+
+.jud-subhead {
+  margin: 0.9rem 0 0.2rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--p-muted);
+}
+
+.jud-total {
+  text-align: right;
+}
+
+.jud-total-note {
+  display: block;
+  font-size: 0.7rem;
+  margin-top: 0.15rem;
+}
+
+.jud-sheet-who {
+  background: #fff4cc;
+  border: 1px solid #e0a800;
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.6rem 0;
+}
+
+.jud-sheet-who p {
+  margin: 0 0 0.4rem;
+  font-weight: 700;
+}
+
+.jud-sheet-row.is-locked {
+  opacity: 0.55;
+}
+
+.jud-sheet-others {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--p-muted);
+}
+
+.jud-tool small {
+  font-weight: 500;
+}

@@ -1,0 +1,550 @@
+/* =====================================================================
+   Audience themes. The base look ("broadcast") is defined on `.aud` in
+   audience.css; each block here overrides the variables and the handful of
+   rules that carry the character of a look.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   Drag strip: checkered flags, warm chrome, red, neon.
+   --------------------------------------------------------------------- */
+
+.aud[data-theme='dragstrip'] {
+  --a-bg: #140f0b;
+  --a-bg-2: #201811;
+  --a-panel: rgba(255, 232, 190, 0.06);
+  --a-line: rgba(255, 220, 160, 0.25);
+  --a-fg: #fff4de;
+  --a-fg-2: #d9b98b;
+  --a-accent: #e23a2a;
+  --a-accent-2: #f6c944;
+  --a-win: #ffd23f;
+  --a-display: Bahnschrift, 'Franklin Gothic Medium', 'Arial Narrow', sans-serif;
+  background:
+    radial-gradient(1200px 600px at 50% 120%, rgba(226, 58, 42, 0.28), transparent 60%),
+    radial-gradient(800px 400px at 0% 0%, rgba(246, 201, 68, 0.14), transparent 60%),
+    var(--a-bg);
+}
+
+.aud[data-theme='dragstrip'] .aud-header {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(40, 20, 10, 0.4));
+  border-bottom: 0;
+  box-shadow: 0 6px 0 0 #000;
+  background-clip: padding-box;
+}
+
+.aud[data-theme='dragstrip'] .aud-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -8px;
+  height: 8px;
+  background: repeating-linear-gradient(90deg, #fff 0 16px, #111 16px 32px);
+}
+
+.aud[data-theme='dragstrip'] .aud-flag {
+  width: 46px;
+  height: 30px;
+}
+
+.aud[data-theme='dragstrip'] .aud-lane {
+  background: linear-gradient(180deg, #2b2119, #170f0b);
+  border: 2px solid rgba(255, 220, 160, 0.25);
+  border-top: 12px solid var(--lane);
+  border-radius: 16px 16px 6px 6px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5), 0 14px 30px rgba(0, 0, 0, 0.5);
+}
+
+.aud[data-theme='dragstrip'] .aud-lane.is-winner {
+  box-shadow: 0 0 0 4px var(--a-win), 0 0 70px rgba(255, 210, 63, 0.45);
+}
+
+.aud[data-theme='dragstrip'] .aud-callout-band {
+  background:
+    repeating-linear-gradient(90deg, #fff 0 24px, #111 24px 48px) left / 48px 100% repeat-y,
+    repeating-linear-gradient(90deg, #fff 0 24px, #111 24px 48px) right / 48px 100% repeat-y,
+    linear-gradient(180deg, #c8321f, #8d1a10);
+  background-size: 48px 100%, 48px 100%, auto;
+  padding-left: 76px;
+  padding-right: 76px;
+  color: #fff;
+  border: 4px solid var(--a-accent-2);
+  box-shadow: 0 0 0 4px #111, 0 0 50px rgba(246, 201, 68, 0.35);
+  animation: aud-band-throb 1.4s ease-in-out infinite;
+}
+
+.aud[data-theme='dragstrip'] .aud-callout-main {
+  paint-order: stroke fill;
+  -webkit-text-stroke: 2px #111;
+  text-shadow: 4px 4px 0 #111, 0 0 24px rgba(0, 0, 0, 0.8);
+}
+
+.aud[data-theme='dragstrip'] .aud-callout-tag {
+  background: var(--a-accent-2);
+  border-color: #fff;
+  color: #111;
+  text-shadow: none;
+}
+
+.aud[data-theme='dragstrip'] .tone-armed .aud-callout-band {
+  background:
+    repeating-linear-gradient(90deg, #fff 0 24px, #111 24px 48px) left / 48px 100% repeat-y,
+    repeating-linear-gradient(90deg, #fff 0 24px, #111 24px 48px) right / 48px 100% repeat-y,
+    linear-gradient(180deg, #f6c944, #d9a520);
+  background-size: 48px 100%, 48px 100%, auto;
+  color: #1b1208;
+}
+
+.aud[data-theme='dragstrip'] .tone-armed .aud-callout-main {
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+}
+
+.aud[data-theme='dragstrip'] .tone-armed .aud-callout-tag {
+  background: var(--a-accent);
+  color: #fff;
+}
+
+.aud[data-theme='dragstrip'] .aud-ticker {
+  background: #1a0e08;
+  border-top: 6px solid transparent;
+  border-image: repeating-linear-gradient(90deg, #fff 0 16px, #111 16px 32px) 6;
+}
+
+.aud[data-theme='dragstrip'] .aud-ticker-label {
+  background: var(--a-accent);
+  color: #fff;
+}
+
+.aud[data-theme='dragstrip'] .aud-tree {
+  background: #0d0906;
+  border: 4px solid #e9dcc0;
+  box-shadow: 0 0 0 3px #111, 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+.aud[data-theme='dragstrip'] .aud-bulb.amber.on {
+  box-shadow: 0 0 40px #ffb000, 0 0 120px rgba(255, 176, 0, 0.75);
+}
+
+.aud[data-theme='dragstrip'] .aud-bulb.green.on {
+  box-shadow: 0 0 50px #30e07a, 0 0 150px rgba(48, 224, 122, 0.85);
+}
+
+.aud[data-theme='dragstrip'] .aud-intro-kicker {
+  background: var(--a-accent);
+  color: #fff;
+}
+
+.aud[data-theme='dragstrip'] .aud-intro-title {
+  paint-order: stroke fill;
+  -webkit-text-stroke: 2px #111;
+  text-shadow: 6px 6px 0 #111, 0 0 50px rgba(226, 58, 42, 0.6);
+}
+
+.aud[data-theme='dragstrip'] .aud-replay-badge,
+.aud[data-theme='dragstrip'] .aud-spot-stat {
+  background: var(--a-accent-2);
+  color: #111;
+  border-color: var(--a-accent-2);
+}
+
+.aud[data-theme='dragstrip'] .aud-podium-block {
+  border: 3px solid #111;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.35);
+}
+
+/* ---------------------------------------------------------------------
+   Cartoon: sky blue, chunky white cards, thick outlines, big rounded type.
+   --------------------------------------------------------------------- */
+
+.aud[data-theme='cartoon'] {
+  --a-bg: #1b7cf0;
+  --a-bg-2: #135fc0;
+  --a-panel: #ffffff;
+  --a-line: #0b2a5b;
+  --a-fg: #0b2a5b;
+  --a-fg-2: #4a6a9a;
+  --a-accent: #ff4d4d;
+  --a-accent-2: #ffd21f;
+  --a-win: #ff9f1a;
+  --a-display: 'Segoe UI Black', 'Arial Black', 'Segoe UI', sans-serif;
+  --a-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: linear-gradient(180deg, #4fb0ff 0%, #1b7cf0 55%, #0f56b3 100%);
+}
+
+.aud[data-theme='cartoon'] .aud-header {
+  background: #0b2a5b;
+  color: #fff;
+  border-bottom: 5px solid #ffd21f;
+}
+
+.aud[data-theme='cartoon'] .aud-clock,
+.aud[data-theme='cartoon'] .aud-heat-number,
+.aud[data-theme='cartoon'] .aud-title,
+.aud[data-theme='cartoon'] .aud-subtitle,
+.aud[data-theme='cartoon'] .aud-callout-sub,
+.aud[data-theme='cartoon'] .aud-tree-word,
+.aud[data-theme='cartoon'] .aud-podium-name,
+.aud[data-theme='cartoon'] .aud-intro-sub,
+.aud[data-theme='cartoon'] .aud-replay-meta,
+.aud[data-theme='cartoon'] .aud-more,
+.aud[data-theme='cartoon'] .aud-spot-hint,
+.aud[data-theme='cartoon'] .aud-of {
+  color: #fff;
+}
+
+.aud[data-theme='cartoon'] .aud-heat-number,
+.aud[data-theme='cartoon'] .aud-title,
+.aud[data-theme='cartoon'] .aud-intro-title {
+  -webkit-text-stroke: 3px #0b2a5b;
+  paint-order: stroke fill;
+  text-shadow: 6px 6px 0 #0b2a5b;
+  color: #fff;
+}
+
+.aud[data-theme='cartoon'] .aud-kicker {
+  color: #ffd21f;
+}
+
+.aud[data-theme='cartoon'] .aud-lane {
+  background: #fff;
+  color: #0b2a5b;
+  border: 5px solid #0b2a5b;
+  border-top: 5px solid #0b2a5b;
+  border-radius: 26px;
+  box-shadow: 0 10px 0 #0b2a5b;
+  padding-top: 8px;
+}
+
+.aud[data-theme='cartoon'] .aud-lane::before {
+  display: none;
+}
+
+.aud[data-theme='cartoon'] .aud-lane-band {
+  background: var(--lane);
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 18px;
+  margin-top: 4px;
+}
+
+.aud[data-theme='cartoon'] .aud-lane-word {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.aud[data-theme='cartoon'] .aud-lane.is-winner {
+  border-color: var(--a-win);
+  box-shadow: 0 10px 0 var(--a-win), 0 0 0 6px rgba(255, 159, 26, 0.35);
+  transform: scale(1.04) rotate(-1deg);
+}
+
+.aud[data-theme='cartoon'] .aud-place {
+  color: #0b2a5b;
+}
+
+.aud[data-theme='cartoon'] .aud-callout-band {
+  background: #ffd21f;
+  color: #0b2a5b;
+  border: 5px solid #0b2a5b;
+  border-radius: 999px;
+  box-shadow: 0 10px 0 #0b2a5b;
+  animation: aud-band-throb 1.2s ease-in-out infinite;
+}
+
+.aud[data-theme='cartoon'] .aud-callout-main {
+  text-shadow: none;
+}
+
+.aud[data-theme='cartoon'] .aud-callout-tag {
+  background: #ff4d4d;
+  color: #fff;
+  border-color: #0b2a5b;
+  border-width: 3px;
+  border-radius: 999px;
+}
+
+.aud[data-theme='cartoon'] .aud-ondeck,
+.aud[data-theme='cartoon'] .aud-board-row,
+.aud[data-theme='cartoon'] .aud-strip-lane,
+.aud[data-theme='cartoon'] .aud-award,
+.aud[data-theme='cartoon'] .aud-replay-result,
+.aud[data-theme='cartoon'] .aud-spot-card,
+.aud[data-theme='cartoon'] .aud-winner-banner {
+  background: #fff;
+  color: #0b2a5b;
+  border: 4px solid #0b2a5b;
+  border-radius: 20px;
+  box-shadow: 0 8px 0 #0b2a5b;
+}
+
+.aud[data-theme='cartoon'] .aud-spot-card {
+  border-top: 4px solid #0b2a5b;
+  border-radius: 28px;
+}
+
+.aud[data-theme='cartoon'] .aud-winner-banner {
+  border-radius: 999px;
+}
+
+.aud[data-theme='cartoon'] .aud-winner-banner .aud-kicker,
+.aud[data-theme='cartoon'] .aud-award .aud-kicker,
+.aud[data-theme='cartoon'] .aud-spot-kicker {
+  color: #ff4d4d;
+}
+
+.aud[data-theme='cartoon'] .aud-board-row.rank-1 {
+  border-color: var(--a-win);
+}
+
+.aud[data-theme='cartoon'] .aud-tree {
+  background: #0b2a5b;
+  border-color: #fff;
+  box-shadow: 0 10px 0 #06183a;
+}
+
+.aud[data-theme='cartoon'] .aud-ticker {
+  background: #0b2a5b;
+  color: #fff;
+  border-top: 5px solid #ffd21f;
+}
+
+.aud[data-theme='cartoon'] .aud-ticker-label {
+  background: #ffd21f;
+  color: #0b2a5b;
+}
+
+.aud[data-theme='cartoon'] .aud-replay-badge,
+.aud[data-theme='cartoon'] .aud-intro-kicker {
+  background: #ffd21f;
+  color: #0b2a5b;
+  border: 4px solid #0b2a5b;
+  border-radius: 999px;
+}
+
+.aud[data-theme='cartoon'] .aud-hype {
+  opacity: 0.6;
+}
+
+.aud[data-theme='cartoon'] .aud-portrait.is-cutout {
+  filter: drop-shadow(0 10px 0 rgba(11, 42, 91, 0.25));
+}
+
+/* ---------------------------------------------------------------------
+   Minimal: white, one orange accent, plenty of space.
+   --------------------------------------------------------------------- */
+
+.aud[data-theme='minimal'] {
+  --a-bg: #ffffff;
+  --a-bg-2: #f3f4f6;
+  --a-panel: #f6f7f9;
+  --a-line: #e2e5ea;
+  --a-fg: #111318;
+  --a-fg-2: #6b7280;
+  --a-accent: #ff6a00;
+  --a-accent-2: #ff6a00;
+  --a-win: #ff6a00;
+  --a-display: 'Segoe UI', system-ui, sans-serif;
+  --a-body: 'Segoe UI', system-ui, sans-serif;
+  background: #fff;
+}
+
+.aud[data-theme='minimal'] .aud-header {
+  background: #fff;
+  border-bottom: 1px solid var(--a-line);
+}
+
+.aud[data-theme='minimal'] .aud-flag {
+  border-color: var(--a-line);
+}
+
+.aud[data-theme='minimal'] .aud-heat-number,
+.aud[data-theme='minimal'] .aud-title,
+.aud[data-theme='minimal'] .aud-intro-title,
+.aud[data-theme='minimal'] .aud-car-name,
+.aud[data-theme='minimal'] .aud-racer,
+.aud[data-theme='minimal'] .aud-spot-name,
+.aud[data-theme='minimal'] .aud-board-name,
+.aud[data-theme='minimal'] .aud-award-name,
+.aud[data-theme='minimal'] .aud-callout-sub,
+.aud[data-theme='minimal'] .aud-strip-body,
+.aud[data-theme='minimal'] .aud-intro-sub,
+.aud[data-theme='minimal'] .aud-podium-name,
+.aud[data-theme='minimal'] .aud-winner-name,
+.aud[data-theme='minimal'] .aud-intro-car b {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+.aud[data-theme='minimal'] .aud-title,
+.aud[data-theme='minimal'] .aud-intro-title {
+  font-weight: 800;
+  color: var(--a-fg);
+}
+
+.aud[data-theme='minimal'] .aud-lane {
+  background: #fff;
+  border: 1px solid var(--a-line);
+  border-top: 8px solid var(--lane);
+  border-radius: 8px;
+}
+
+.aud[data-theme='minimal'] .aud-lane::before {
+  display: none;
+}
+
+.aud[data-theme='minimal'] .aud-lane.is-winner {
+  border-color: var(--a-win);
+  box-shadow: 0 0 0 3px var(--a-win);
+  background: #fff8f2;
+}
+
+.aud[data-theme='minimal'] .aud-callout-band {
+  background: var(--a-fg);
+  color: #fff;
+  border: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+.aud[data-theme='minimal'] .aud-callout-main {
+  text-shadow: none;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 800;
+}
+
+.aud[data-theme='minimal'] .aud-callout-tag {
+  border-color: var(--a-accent);
+  color: var(--a-accent);
+  letter-spacing: 0.06em;
+}
+
+.aud[data-theme='minimal'] .tone-armed .aud-callout-band {
+  background: var(--a-accent);
+  color: #fff;
+}
+
+.aud[data-theme='minimal'] .tone-armed .aud-callout-tag {
+  border-color: #fff;
+  color: #fff;
+}
+
+.aud[data-theme='minimal'] .aud-winner-banner {
+  background: #fff4ea;
+  border-color: var(--a-accent);
+}
+
+.aud[data-theme='minimal'] .aud-tree {
+  background: #111318;
+  border-color: #111318;
+}
+
+.aud[data-theme='minimal'] .aud-ticker {
+  background: #111318;
+  color: #fff;
+  border-top: 0;
+}
+
+.aud[data-theme='minimal'] .aud-ticker-label {
+  background: var(--a-accent);
+  color: #fff;
+}
+
+.aud[data-theme='minimal'] .aud-tick b {
+  color: var(--a-accent);
+}
+
+.aud[data-theme='minimal'] .aud-intro-kicker,
+.aud[data-theme='minimal'] .aud-replay-badge {
+  background: var(--a-accent);
+  color: #fff;
+}
+
+.aud[data-theme='minimal'] .aud-hype {
+  opacity: 0.35;
+}
+
+.aud[data-theme='minimal'] .aud-intro-burst {
+  opacity: 0.4;
+}
+
+.aud[data-theme='minimal'] .aud-spot-card,
+.aud[data-theme='minimal'] .aud-award,
+.aud[data-theme='minimal'] .aud-board-row,
+.aud[data-theme='minimal'] .aud-strip-lane,
+.aud[data-theme='minimal'] .aud-replay-result,
+.aud[data-theme='minimal'] .aud-ondeck {
+  background: #fff;
+  box-shadow: 0 6px 24px rgba(17, 19, 24, 0.06);
+}
+
+.aud[data-theme='minimal'] .aud-podium-block {
+  color: #fff;
+}
+
+.aud[data-theme='minimal'] .place-1 .aud-podium-block {
+  background: var(--a-accent);
+}
+
+.aud[data-theme='minimal'] .place-2 .aud-podium-block {
+  background: #9aa1ab;
+}
+
+.aud[data-theme='minimal'] .place-3 .aud-podium-block {
+  background: #c9a27e;
+}
+
+.aud[data-theme='minimal'] .aud-portrait.is-cutout {
+  filter: drop-shadow(0 12px 16px rgba(17, 19, 24, 0.25));
+}
+
+.aud[data-theme='minimal'] .aud-headshot {
+  border-width: 2px;
+}
+
+.aud[data-theme='minimal'] .aud-start {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--a-fg);
+}
+
+.aud[data-theme='cartoon'] .aud-message {
+  background: #fff;
+  color: #0b2a5b;
+  border: 4px solid #0b2a5b;
+  border-radius: 999px;
+  box-shadow: 0 8px 0 #0b2a5b;
+}
+
+.aud[data-theme='cartoon'] .aud-ondeck-label {
+  color: #ff4d4d;
+}
+
+/* ---- nominees, per look ----------------------------------------------------- */
+
+.aud[data-theme='cartoon'] .aud-nominee {
+  background: #fff;
+  color: #0b2a5b;
+  border: 4px solid #0b2a5b;
+  border-radius: 20px;
+  box-shadow: 0 8px 0 #0b2a5b;
+}
+
+.aud[data-theme='cartoon'] .aud-nominee-racer {
+  color: #4a6a9a;
+}
+
+.aud[data-theme='cartoon'] .aud-nominees-kicker {
+  color: #ffd21f;
+}
+
+.aud[data-theme='minimal'] .aud-nominee {
+  background: #fff;
+  box-shadow: 0 6px 24px rgba(17, 19, 24, 0.06);
+}
+
+.aud[data-theme='minimal'] .aud-nominees-kicker,
+.aud[data-theme='dragstrip'] .aud-nominees-kicker {
+  color: var(--a-accent);
+}
