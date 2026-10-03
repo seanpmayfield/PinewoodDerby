@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FORMAT_PRESETS } from '@derby/core';
+import { FORMAT_PRESETS, TIMER_PROFILES } from '@derby/core';
 import { useDerby } from '../../lib/derby.tsx';
 import { fetchHistory, fetchInfo, getPin, importEvent, setPin } from '../../lib/connection.ts';
 import type { BackupStatus, HistoryEntry, ServerInfo } from '../../lib/types.ts';
@@ -356,30 +356,39 @@ function TimerPanel() {
     );
   }
   const isSim = timer.kind === 'simulator';
-  const statusText = timer.connecting ? 'connecting…' : timer.connected ? (timer.verified ? 'connected' : 'port open, timer not answering') : 'offline';
+  const chosen = TIMER_PROFILES.find((p) => p.key === timer.kind);
+  const statusText = timer.connecting ? (timer.kind === 'auto' ? 'looking for a timer…' : 'connecting…') : timer.connected ? (timer.verified ? 'connected' : 'port open, timer not answering') : 'offline';
   const busy = timer.state !== 'idle';
 
   return (
     <section className="panel">
       <h2>Timer</h2>
-      <div className="lane-toggles">
-        <button className={`btn ${isSim ? 'btn-primary' : ''}`} onClick={() => run('configureTimer', { kind: 'simulator' })} disabled={busy}>
-          Simulator
-        </button>
-        <button className={`btn ${!isSim ? 'btn-primary' : ''}`} onClick={() => run('configureTimer', { kind: 'derby-magic' })} disabled={busy}>
-          Derby Magic (USB)
-        </button>
-      </div>
+      <label className="field">
+        <span>Timer</span>
+        <select value={timer.kind} onChange={(e) => run('configureTimer', { kind: e.target.value })} disabled={busy}>
+          <option value="simulator">Simulator (rehearsal, no hardware)</option>
+          <option value="auto">Auto-detect any known timer</option>
+          {TIMER_PROFILES.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.name}
+              {p.prober ? '' : ' (pick the port by hand)'}
+            </option>
+          ))}
+        </select>
+      </label>
       <p className="timer-status">
         <span className={`pill ${timer.connected ? (timer.verified ? 'pill-ok' : 'pill-armed') : 'pill-off'}`}>{statusText}</span>
+        {timer.profile && !isSim && <span className="muted small"> {timer.profile.name}</span>}
         {timer.port && (
           <span className="muted small">
             {' '}
-            {timer.port} @ {timer.baud}
+            on {timer.port} @ {timer.baud}
           </span>
         )}
         {timer.identity && <span className="muted small"> · {timer.identity}</span>}
+        {timer.lanesDetected !== null && <span className="muted small"> · {timer.lanesDetected} lanes</span>}
       </p>
+      {chosen?.notes && <p className="muted small">{chosen.notes}</p>}
       {timer.lastError && <p className="warn-box">{timer.lastError}</p>}
 
       {!isSim && (
@@ -406,21 +415,29 @@ function TimerPanel() {
           <label className="field">
             <span>Baud</span>
             <select value={baud} onChange={(e) => setBaud(e.target.value)}>
-              <option value="">Auto (19200, then 9600)</option>
-              <option value="19200">19200 (current firmware)</option>
-              <option value="9600">9600 (older firmware)</option>
+              <option value="">The timer's usual rate{chosen ? ` (${chosen.params.baud})` : ''}</option>
+              <option value="19200">19200</option>
+              <option value="9600">9600</option>
+              <option value="4800">4800</option>
+              <option value="1200">1200</option>
             </select>
           </label>
           <div className="control-actions">
-            <button className="btn btn-primary" onClick={() => run('configureTimer', { kind: 'derby-magic', port: port || null, baud: baud ? Number(baud) : null })} disabled={busy}>
+            <button className="btn btn-primary" onClick={() => run('configureTimer', { port: port || null, baud: baud ? Number(baud) : null })} disabled={busy}>
               Connect
             </button>
             <button className="btn btn-sm" onClick={() => run('identifyTimer')} disabled={!timer.connected || busy}>
               Identify
             </button>
+            {timer.remoteStart && (
+              <button className="btn btn-sm" onClick={() => run('remoteStartTimer')} disabled={!timer.connected || timer.state !== 'armed'} title="Open the gate from the timer's own release">
+                Open gate
+              </button>
+            )}
           </div>
           <p className="muted small">
-            The timer shows up as a COM port (★ marks the Microchip USB bridge it uses). Windows 10 and later install the driver automatically; the driver folder in the repo is for older machines.
+            The timer shows up as a COM port (★ marks a USB bridge a known timer uses). With Auto-detect the server probes every port for every timer it knows, which takes a few seconds. A timer marked
+            "pick the port by hand" never answers a probe, so choose its port here and press Connect. The timer protocols come from the DerbyNet project; see the README.
           </p>
         </>
       )}

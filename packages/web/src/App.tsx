@@ -6,7 +6,7 @@ import { Pit } from './screens/Pit.tsx';
 import { Judges } from './screens/Judges.tsx';
 import { ReplayCam } from './screens/ReplayCam.tsx';
 import { PhoneSetup } from './screens/PhoneSetup.tsx';
-import { PrintAwards, PrintCertificates, PrintHeats, PrintResults, PrintRoster, PrintStandings } from './screens/Print.tsx';
+import { PrintAwards, PrintCertificates, PrintHeats, PrintLabels, PrintResults, PrintRoster, PrintStandings } from './screens/Print.tsx';
 import { Notices } from './components/Notices.tsx';
 import { Feedback } from './components/Feedback.tsx';
 
@@ -26,6 +26,7 @@ export function App() {
         <Route path="/print/standings/:roundId" element={<PrintStandings />} />
         <Route path="/print/awards" element={<PrintAwards />} />
         <Route path="/print/roster" element={<PrintRoster />} />
+        <Route path="/print/labels" element={<PrintLabels />} />
         <Route path="/print/results" element={<PrintResults />} />
         <Route path="/print/certificates" element={<PrintCertificates />} />
       </Routes>

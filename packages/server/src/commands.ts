@@ -8,6 +8,7 @@ import {
   DerbyEngine,
   DerbyError,
   findPreset,
+  findProfile,
   importRosterCsv,
   validateFormat,
   type Car,
@@ -228,14 +229,17 @@ const COMMANDS: Record<string, Handler> = {
   keepWaiting: (ctx) => ctx.timer.keepWaiting(),
   simulateGate: (ctx) => ctx.timer.simulateGate(),
   identifyTimer: (ctx) => ctx.timer.identify(),
+  /** Open the start gate on a track with a solenoid release the timer controls. */
+  remoteStartTimer: (ctx) => ctx.timer.remoteStart(),
   testTimer: (ctx) => ctx.timer.test(),
   listSerialPorts: (ctx) => ctx.timer.scanPorts(),
   /** Switch between the simulator and the real timer, or pick a port/baud. */
   configureTimer: async (ctx, a) => {
     const patch: Partial<TimerConfig> = {};
     if (a.kind !== undefined) {
-      if (a.kind !== 'simulator' && a.kind !== 'derby-magic') throw new DerbyError('kind must be simulator or derby-magic.', 'bad-args');
-      patch.kind = a.kind;
+      const kind = str(a.kind, 'kind');
+      if (kind !== 'simulator' && kind !== 'auto' && !findProfile(kind)) throw new DerbyError('kind must be simulator, auto, or a known timer.', 'bad-args');
+      patch.kind = kind;
     }
     if (a.port !== undefined) patch.port = a.port === null || a.port === '' ? null : str(a.port, 'port');
     if (a.baud !== undefined) patch.baud = a.baud === null || a.baud === '' ? null : num(Number(a.baud), 'baud');

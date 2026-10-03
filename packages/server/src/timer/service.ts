@@ -1,37 +1,48 @@
 /**
  * Glue between the timer (real or simulated) and the race engine.
  *
- * Coordinator arms a heat -> the session resets the timer and waits for the
+ * Coordinator arms a heat -> the session prepares the timer and waits for the
  * lanes that have cars -> the gate opens -> lane results stream in live ->
  * the finished heat is recorded in the engine.
  *
  * The timer kind and port can be changed at runtime from the Setup screen, so
  * the coordinator can rehearse on the simulator and plug the real timer in
- * later. A lost serial connection is retried in the background.
+ * later. The kind is the simulator, "auto" (probe every port for any known
+ * timer) or one timer profile. A lost serial connection is retried in the
+ * background.
  */
 
 import {
+  DERBY_MAGIC_PROFILE,
   DerbyEngine,
   DerbyError,
+  findProfile,
   SimulatedTimerPort,
   TimerSession,
   type HeatLaneTime,
   type TimerPort,
+  type TimerProfile,
   type TimerState,
 } from '@derby/core';
 import type { TimerKind } from '../config.js';
-import { connectDerbyMagic, listSerialPorts, type ConnectOptions, type SerialPortInfo, type SerialTimerPort } from './serial.js';
+import { connectTimer, listSerialPorts, type ConnectOptions, type ConnectResult, type SerialPortInfo, type SerialTimerPort } from './serial.js';
 
 export interface TimerConfig {
   kind: TimerKind;
   /** Serial port path, or null for auto-detect. */
   port: string | null;
-  /** Baud rate, or null to try 19200 then 9600. */
+  /** Baud rate override, or null for the profile's own. */
   baud: number | null;
 }
 
 export interface TimerStatus {
   kind: TimerKind;
+  /** The timer profile in use once connected. */
+  profile: { key: string; name: string } | null;
+  /** The timer can open the start gate itself. */
+  remoteStart: boolean;
+  /** Lanes the timer reported having, if it said. */
+  lanesDetected: number | null;
   connected: boolean;
   connecting: boolean;
   state: TimerState;
@@ -39,7 +50,7 @@ export interface TimerStatus {
   /** Serial port in use. */
   port: string | null;
   baud: number | null;
-  /** False when the port was opened without the timer answering the identify probe. */
+  /** False when the port was opened without the timer answering the probe. */
   verified: boolean;
   /** Serial ports seen at the last scan. */
   ports: SerialPortInfo[];
@@ -73,7 +84,7 @@ export interface TimerServiceOptions {
   onStatus: (status: TimerStatus) => void;
   onNotice?: (level: 'info' | 'warn' | 'error', message: string) => void;
   /** Injected in tests. */
-  connectSerial?: (options: ConnectOptions) => ReturnType<typeof connectDerbyMagic>;
+  connectSerial?: (options: ConnectOptions) => Promise<ConnectResult>;
   listPorts?: () => Promise<SerialPortInfo[]>;
   reconnectDelayMs?: number;
 }
@@ -99,6 +110,9 @@ export class TimerService {
     this.config = { ...options.config };
     this.status = {
       kind: this.config.kind,
+      profile: null,
+      remoteStart: false,
+      lanesDetected: null,
       connected: false,
       connecting: false,
       state: 'idle',
@@ -159,6 +173,7 @@ export class TimerService {
     this.publish();
 
     let port: TimerPort;
+    let profile: TimerProfile;
     if (this.config.kind === 'simulator') {
       this.simulator = new SimulatedTimerPort({
         timeScale: this.options.simulatorSpeed ?? 1,
@@ -166,25 +181,32 @@ export class TimerService {
         random: Math.random,
       });
       port = this.simulator;
+      profile = DERBY_MAGIC_PROFILE;
       this.status.port = null;
       this.status.baud = null;
       this.status.verified = true;
     } else {
       try {
         await this.scanPorts();
-        const connect = this.options.connectSerial ?? connectDerbyMagic;
-        const result = await connect({ path: this.config.port ?? undefined, baudRate: this.config.baud ?? undefined });
+        const connect = this.options.connectSerial ?? connectTimer;
+        const result = await connect({
+          path: this.config.port ?? undefined,
+          baudRate: this.config.baud ?? undefined,
+          profileKey: this.config.kind,
+          onProgress: (message) => this.log(message),
+        });
         if (generation !== this.generation) {
           await result.port.close();
           return;
         }
         this.serial = result.port;
         port = result.port;
+        profile = result.profile;
         this.status.port = result.port.path;
         this.status.baud = result.port.baudRate;
         this.status.verified = result.verified;
         this.status.identity = result.identity;
-        this.log(`connected ${result.port.path} @ ${result.port.baudRate}${result.verified ? '' : ' (no reply to probe)'}`);
+        this.log(`connected ${result.profile.name} on ${result.port.path} @ ${result.port.baudRate}${result.verified ? '' : ' (no reply to probe)'}`);
         result.port.onClose((err) => {
           if (generation !== this.generation) return;
           this.log(`port closed${err ? `: ${err.message}` : ''}`);
@@ -208,11 +230,18 @@ export class TimerService {
     }
 
     const session = new TimerSession(port, {
+      profile,
+      laneCount: () => this.engine.state.laneCount,
       heatTimeoutMs: () => this.engine.state.settings.heatTimeoutSec * 1000,
       // A missing car is the coordinator's call, not the clock's.
       autoCompleteOnTimeout: false,
+      // Real timers want a breath between commands; the simulator does not care.
+      commandGapMs: this.simulator ? 0 : 100,
     });
     this.session = session;
+    this.status.profile = { key: profile.key, name: profile.name };
+    this.status.remoteStart = session.remoteStartSupported;
+    this.status.lanesDetected = null;
     session.on('line', ({ raw }) => this.log(`< ${raw}`));
     session.on('state', ({ state }) => {
       this.status.state = state;
@@ -227,6 +256,13 @@ export class TimerService {
       this.status.verified = true;
       this.publish();
     });
+    session.on('lane-count', ({ lanes }) => {
+      this.status.lanesDetected = lanes;
+      this.log(`timer reports ${lanes} lanes`);
+      if (lanes < this.engine.state.laneCount) this.options.onNotice?.('warn', `The timer says it has ${lanes} lanes, but the event is set up for ${this.engine.state.laneCount}.`);
+      this.publish();
+    });
+    session.on('gate', ({ closed }) => this.log(closed ? 'gate closed' : 'gate open'));
     session.on('unexpected', ({ message }) => this.options.onNotice?.('warn', message));
     session.on('race-start', () => this.onRaceStart());
     session.on('lane-result', (lane) => {
@@ -246,6 +282,9 @@ export class TimerService {
     if (this.simulator) {
       this.log('> V');
       session.identify();
+    } else {
+      // Set-up commands and gate polling, as the profile describes.
+      session.start();
     }
     this.publish();
   }
@@ -274,6 +313,9 @@ export class TimerService {
     this.status.state = 'idle';
     this.status.identity = null;
     this.status.verified = false;
+    this.status.profile = null;
+    this.status.remoteStart = false;
+    this.status.lanesDetected = null;
     this.status.heatId = null;
     this.status.testing = false;
     this.status.liveLanes = [];
@@ -298,7 +340,7 @@ export class TimerService {
     return this.session;
   }
 
-  /** Reset the timer and wait for the cars in this heat. */
+  /** Prepare the timer and wait for the cars in this heat. */
   arm(heatId: string): void {
     const session = this.requireSession();
     const { heat } = this.engine.getHeat(heatId);
@@ -321,7 +363,7 @@ export class TimerService {
     this.status.liveLanes = [];
     this.status.countdown = null;
     this.status.lastError = null;
-    this.log('> R');
+    this.log(`> arm lanes ${lanes.join(', ')}`);
     session.arm(lanes);
     this.publish();
   }
@@ -336,7 +378,7 @@ export class TimerService {
     this.status.testing = true;
     this.status.liveLanes = [];
     this.status.lastError = null;
-    this.log('> R (lane test)');
+    this.log('> arm (lane test)');
     session.arm(lanes);
     this.publish();
   }
@@ -397,13 +439,17 @@ export class TimerService {
   }
 
   identify(): void {
-    this.log('> V');
+    this.log('> identify');
     this.requireSession().identify();
   }
 
+  /** Open the start gate, on a track with a release the timer controls. */
   remoteStart(): void {
-    this.log('> S');
-    this.requireSession().remoteStart();
+    const session = this.requireSession();
+    if (!session.remoteStartSupported) throw new DerbyError(`${session.profile.name} cannot open the gate.`, 'bad-state');
+    if (this.status.state !== 'armed') throw new DerbyError('Arm a heat first.', 'bad-state');
+    this.log('> remote start');
+    session.remoteStart();
   }
 
   /** Simulator only: open the start gate. */
@@ -474,3 +520,5 @@ export class TimerService {
     this.options.onStatus(this.status);
   }
 }
+
+export { findProfile };

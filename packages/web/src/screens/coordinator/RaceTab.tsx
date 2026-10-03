@@ -177,6 +177,9 @@ export function RaceTab() {
             <a href="/print/roster" target="_blank" rel="noreferrer">
               Roster
             </a>
+            <a href="/print/labels" target="_blank" rel="noreferrer">
+              Car tags
+            </a>
             <a href="/print/results" target="_blank" rel="noreferrer">
               Full results
             </a>
@@ -240,6 +243,11 @@ export function RaceTab() {
               {current && timer?.heatId === current.id && timer.state === 'armed' && timer.kind === 'simulator' && (
                 <button className="btn btn-sm" onClick={() => run('simulateGate')}>
                   Open gate (simulated) <kbd>G</kbd>
+                </button>
+              )}
+              {current && timer?.heatId === current.id && timer.state === 'armed' && timer.kind !== 'simulator' && timer.remoteStart && (
+                <button className="btn btn-sm" onClick={() => run('remoteStartTimer')} title="The timer's own gate release">
+                  Open gate
                 </button>
               )}
               {current && timer?.heatId === current.id && timer.state === 'armed' && timer.kind !== 'simulator' && !timer.countdown && (

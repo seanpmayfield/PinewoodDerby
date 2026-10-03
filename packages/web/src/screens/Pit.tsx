@@ -5,19 +5,36 @@ import { useDerby } from '../lib/derby.tsx';
 import { CAMERA_OK, carInfo } from '../lib/format.ts';
 import { CarDetail } from '../pit/CarDetail.tsx';
 import { photoUrl } from '../pit/photos.ts';
+import { BARCODE_SCAN_OK, BarcodeScan } from '../pit/BarcodeScan.tsx';
+import { parseCarCode } from '../print/code128.ts';
 import '../pit/pit.css';
 
 /**
  * Pit crew screen, built for a phone at the check-in table: find the car,
- * check the scout in, weigh and inspect the car, take its photo.
+ * check the scout in, weigh and inspect the car, take its photo. A USB
+ * barcode scanner types the car tag's code into the search box and presses
+ * Enter; a phone can scan the tag with its camera instead.
  */
 export function Pit() {
-  const { state, run } = useDerby();
+  const { state, run, notify } = useDerby();
   const { carId } = useParams();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'todo' | 'in'>('all');
   const [adding, setAdding] = useState(false);
+  const [scanning, setScanning] = useState(false);
+
+  /** A scanned or typed car tag ("CAR12" or just "12") opens that car. */
+  const openCode = (text: string): boolean => {
+    if (!state) return false;
+    const number = parseCarCode(text);
+    const car = number !== null ? state.cars.find((c) => c.number === number && !c.withdrawn) : undefined;
+    if (!car) return false;
+    setSearch('');
+    setScanning(false);
+    navigate(`/pit/${car.id}`);
+    return true;
+  };
 
   const rows = useMemo(() => {
     if (!state) return [];
@@ -26,11 +43,19 @@ export function Pit() {
       .map((car) => ({ car, racer: state.racers.find((r) => r.id === car.racerId) }))
       .filter((r): r is { car: Car; racer: Racer } => !!r.racer && !r.car.withdrawn)
       .filter(({ racer }) => (filter === 'in' ? racer.checkedIn : filter === 'todo' ? !racer.checkedIn : true))
-      .filter(({ car, racer }) => !q || `${racer.firstName} ${racer.lastName} ${car.number} ${car.name ?? ''}`.toLowerCase().includes(q))
+      .filter(({ car, racer }) => !q || `${racer.firstName} ${racer.lastName} ${car.number} ${car.name ?? ''}`.toLowerCase().includes(q) || parseCarCode(q) === car.number)
       .sort((a, b) => a.car.number - b.car.number);
   }, [state, search, filter]);
 
   if (!state) return <div className="pit pit-loading">Connecting…</div>;
+
+  if (scanning) {
+    return (
+      <div className="pit">
+        <BarcodeScan onCode={(text) => !openCode(text) && notify('warn', `No car matches the code "${text}".`)} onCancel={() => setScanning(false)} />
+      </div>
+    );
+  }
 
   const selected = carId ? rows.find((r) => r.car.id === carId) ?? lookup(state, carId) : null;
   if (selected) {
@@ -72,7 +97,23 @@ export function Pit() {
       )}
 
       <div className="pit-toolbar">
-        <input className="pit-search" type="search" placeholder="Car # or name" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input
+          className="pit-search"
+          type="search"
+          placeholder="Car # or name, or scan a car tag"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return;
+            if (openCode(search)) return;
+            if (rows.length === 1) navigate(`/pit/${rows[0]!.car.id}`);
+          }}
+        />
+        {BARCODE_SCAN_OK && (
+          <button className="pit-chip" onClick={() => setScanning(true)} title="Read a car tag with the camera">
+            Scan tag
+          </button>
+        )}
         <div className="pit-chips">
           {(['all', 'todo', 'in'] as const).map((f) => (
             <button key={f} className={`pit-chip ${filter === f ? 'is-active' : ''}`} onClick={() => setFilter(f)}>

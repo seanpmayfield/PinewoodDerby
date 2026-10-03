@@ -4,7 +4,8 @@ Race management software for a Cub Scout pack pinewood derby. One Windows
 laptop runs a local server; every screen (race coordinator, audience display,
 pit crew check-in, judges, replay camera) is a browser page served over a
 Wi-Fi hotspot, so it works in a gym or church hall with no internet at all.
-It drives a Derby Magic timer, or a built-in simulator for rehearsals.
+It drives a dozen makes of track timer (Derby Magic, FastTrack, The Champ,
+The Judge and more; see Timers), or a built-in simulator for rehearsals.
 
 ## Installing on the race laptop
 
@@ -283,6 +284,14 @@ new photos show up on the slide as they happen; the projector never needs a
 refresh, and every open page reloads itself when a new build of the program
 is installed.
 
+**Car tags and barcodes.** *Car tags* under Print on the Race tab makes a
+sheet of labels, one per car, with the number, racer, den and a barcode. Tape
+one to each car's box or check-in card. At the table, a USB barcode scanner
+plugged into the check-in laptop types the code into the pit screen's search
+box and the car opens; on a phone on the secure address, *Scan tag* reads the
+barcode with the camera instead. Typing a car number and pressing Enter does
+the same thing by hand.
+
 **Scout video.** The racer card has *Record video*: the front camera, a 3-2-1
 count-in, four seconds of the scout saying hi (with sound), preview, upload.
 It plays in the racer spotlight beside the car, on the award reveal when that
@@ -459,7 +468,7 @@ full-size page captures.
 | `DERBY_HTTPS_PORT` | `8443` | HTTPS port for phone cameras; `0` disables HTTPS |
 | `DERBY_DATA_DIR` | `data/` (installed: `C:\ProgramData\Pinewood Derby`) | Database, photos, clips, headshots and certificates |
 | `DERBY_PIN` | none | A PIN every POST must carry in the `x-derby-pin` header |
-| `DERBY_TIMER` | `simulator` | `simulator` or `derby-magic` (the Setup tab's choice overrides this) |
+| `DERBY_TIMER` | `simulator` | `simulator`, `auto`, or a timer key such as `DerbyMagic` or `FastTrack-K` (the Setup tab's choice overrides this) |
 | `DERBY_SERIAL_PORT` | auto | COM port of the timer |
 | `DERBY_SIM_SPEED` | `1` | Simulator speed; `0` is instant |
 | `DERBY_SIM_DNF` | `0.03` | Chance a simulated car never finishes |
@@ -477,7 +486,7 @@ packages/
     src/schedule/   Lane rotation charts and the greedy re-packer for mid-race changes
     src/scoring/    Places, scoring methods, standings with tie-breaks
     src/race/       DerbyEngine: every state change goes through here
-    src/timer/      Derby Magic wire protocol, heat collector session, simulator
+    src/timer/      Timer profiles (every supported timer's protocol), the session that runs them, simulator
     src/roster/     CSV import with forgiving column detection
   server/   Node + Fastify. Owns the engine, snapshots every change to SQLite (node:sqlite,
             no native build), broadcasts state over WebSocket, drives the timer.
@@ -487,7 +496,7 @@ packages/
     src/backup.ts         Automatic backup to USB sticks
     src/network.ts        LAN addresses, hotspot address, firewall check
     src/timer/service.ts  Arms the timer for a heat, streams live lanes, records the result
-    src/timer/serial.ts   Derby Magic over USB serial: port listing, probe, line splitting, reconnect
+    src/timer/serial.ts   Timers over USB serial: port listing, probing each profile, line splitting
     src/store.ts          SQLite: current state per event + change history
     src/media.ts          Photos, replay clips and headshots on disk; state holds keys only
     src/tls.ts            Local certificate authority and server certificate for HTTPS
@@ -555,32 +564,54 @@ an identical heat, either immediately next or at the end of the round.
 fewest spotlights so far, then the fewest remaining heats; a den with fewer
 heats than cars leaves some scouts without one.
 
-**Timer.** The Derby Magic timer is a serial device (USB via MCP2221, shows up
-as a COM port). Protocol, as documented by the DerbyNet project:
+**Timers.** Every supported timer is described by a *profile* in
+`packages/core/src/timer/profiles.ts`: serial settings, how to recognise it,
+set-up commands, the patterns of its result lines, how it reports the start
+gate, how to mask empty lanes and reset, and the command that opens a
+solenoid gate. One session (`session.ts`) runs any profile, following the
+state machine DerbyNet uses: armed and on the MARK after the heat is
+prepared, SET once the gate is seen closed, racing when it opens or the timer
+says so, done when every expected lane reports, the timer says the race is
+over, or the heat timeout passes and the coordinator rules on the lanes still
+out (the profile's force-results command is sent first). Lines are matched in
+order and each match is cut out of the line, so one line can carry several
+results; a bare digit is read as a lane count or gate state only in the moment
+after the query that asked for it. Gate readings must hold for half a second
+before they count, because switches bounce.
 
-| Item | Value |
-|---|---|
-| Serial | 19200 8N1 (older firmware 9600 8N1) |
-| Identify | send `V`, reply contains `Derby Magic` |
-| Arm | send `R` |
-| Remote start | send `S` (solenoid gate only) |
-| Gate opened | timer sends `B` |
-| Lane finished | `1=3.1234!` = lane 1, 3.1234 s, place `!`=1st `"`=2nd `#`=3rd `$`=4th |
-| Never finished | no line; `0.0000` also means no finish |
+| Timer | Detected | Lane masks | Gate | Remote start |
+|---|---|---|---|---|
+| Derby Magic (19200; older firmware 9600) | yes | no | start message | solenoid gate |
+| MicroWizard FastTrack K and Q series | yes | yes | polled (RG), laser reset while staging | automatic gate release |
+| MicroWizard FastTrack P series | no, pick it | no | no | no |
+| The Champ (SmartLine, eTekGadget, BestTrack) | yes | yes | polled | no |
+| The Champ, SRM firmware (2023 on) | yes | no | start message | no |
+| The Judge (New Directions) | yes | yes | no | no |
+| NewBold DT, TURBO, DerbyStick (1200 baud, 7N2) | no, pick it | no | no | no |
+| Derby Timer (derbytimer.com) | yes | yes | polled | no |
+| PDT (dfgtec.com, Arduino) | yes | yes | polled | yes |
+| Bert Drake | yes | no | polled | no |
+| JIT Racemaster | yes | no | no | no |
+| SuperTimer II | yes | one-command mask | no | no |
 
-`TimerSession` turns those lines into whole-heat results with a timeout for
-lanes that never report. `SimulatedTimerPort` speaks the same protocol so the
-whole app can be exercised without hardware.
+These protocols are ported from DerbyNet (see Acknowledgements); only the
+Derby Magic and the simulator have been exercised here, the rest are tested
+against transcripts of what each timer sends, so the first real run of any
+other timer deserves a lane test and a look at the timer log on the Setup
+tab. `SimulatedTimerPort` speaks the Derby Magic dialect so the whole app can
+be exercised without hardware.
 
-**Connecting the real timer.** Plug it in, open the coordinator's Setup tab and
-choose *Derby Magic (USB)*. With port and baud left on auto the server tries the
-COM port whose USB vendor id is Microchip's (the MCP2221 bridge) first, at
-19200 then 9600, and uses whichever answers the identify command. A specific
-port and baud can be forced, in which case the port is opened even if the
-timer stays quiet and the status says so. The choice is remembered across
-restarts. If the cable is pulled mid-event the server keeps retrying every few
-seconds and the coordinator sees the timer go offline. *Lane test* arms every
-lane with no heat attached so the track can be checked before racing.
+**Connecting the real timer.** Plug it in, open the coordinator's Setup tab
+and pick the timer, or *Auto-detect*, which probes every COM port for every
+timer that can be recognised (a few seconds; ports whose USB bridge matches a
+known timer are tried first). Timers that never answer a probe (FastTrack P
+series, NewBold) are chosen by hand with their port. A specific port and baud
+can be forced, in which case the port is opened even if the timer stays quiet
+and the status says so. The choice is remembered across restarts. If the
+cable is pulled mid-event the server keeps retrying every few seconds and the
+coordinator sees the timer go offline. *Lane test* arms every lane with no
+heat attached so the track can be checked before racing. A timer with its own
+gate release shows an *Open gate* button on the Race tab.
 
 **Dry run.** `npm run dry-run` plays a whole derby against a server through
 the coordinator's own commands: demo roster, every round and heat on the
@@ -593,6 +624,15 @@ cd packages/server && DERBY_PORT=8090 DERBY_HTTPS_PORT=0 DERBY_DATA_DIR=/tmp/der
 ```
 
 then `DERBY_URL=http://localhost:8090 npm run dry-run` from the repo root.
+
+## Acknowledgements
+
+The track timer protocols, the way they are driven, and the idea of barcode
+check-in come from **DerbyNet** by Jeff Piazza
+(https://github.com/jeffpiazza/derbynet, MIT licence), which has run real
+derbies for more than a decade and documents each timer at
+https://derbynet.org. Thank you, Jeff. Details and the DerbyNet licence are in
+`THIRD_PARTY_NOTICES.md`.
 
 ## License
 

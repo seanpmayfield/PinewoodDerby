@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { FORMAT_PRESETS } from '@derby/core';
+import { FORMAT_PRESETS, TIMER_PROFILES } from '@derby/core';
 import { useDerby } from '../../lib/derby.tsx';
 import { fetchDiagnostics } from '../../lib/connection.ts';
 import type { Diagnostics } from '../../lib/types.ts';
@@ -259,17 +259,23 @@ export function WizardTab() {
 
         {current === 'Timer' && (
           <Section>
-            <p>Plug the Derby Magic in, choose it here, then run a lane test: roll a car down each lane and every lane should report.</p>
-            <div className="lane-toggles">
-              <button className={`btn ${timer?.kind === 'simulator' ? 'btn-primary' : ''}`} onClick={() => run('configureTimer', { kind: 'simulator' })}>
-                Simulator (rehearsal)
-              </button>
-              <button className={`btn ${timer?.kind === 'derby-magic' ? 'btn-primary' : ''}`} onClick={() => run('configureTimer', { kind: 'derby-magic' })}>
-                Derby Magic (USB)
-              </button>
-            </div>
+            <p>Plug the timer into USB, choose it here (or let the server find it), then run a lane test: roll a car down each lane and every lane should report.</p>
+            <label className="field">
+              <span>Timer</span>
+              <select value={timer?.kind ?? 'simulator'} onChange={(e) => run('configureTimer', { kind: e.target.value })}>
+                <option value="simulator">Simulator (rehearsal)</option>
+                <option value="auto">Auto-detect any known timer</option>
+                {TIMER_PROFILES.map((p) => (
+                  <option key={p.key} value={p.key}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             <Check status={timer?.connected ? 'ok' : 'todo'} title="Timer connected">
-              {timer?.connected ? `${timer.kind === 'simulator' ? 'Simulator' : `Derby Magic on ${timer.port} @ ${timer.baud}`}${timer.identity ? ` · ${timer.identity}` : ''}` : timer?.lastError ?? 'Not connected.'}
+              {timer?.connected
+                ? `${timer.kind === 'simulator' ? 'Simulator' : `${timer.profile?.name ?? 'Timer'} on ${timer.port} @ ${timer.baud}`}${timer.identity ? ` · ${timer.identity}` : ''}`
+                : timer?.lastError ?? 'Not connected.'}
             </Check>
             <div className="control-actions">
               <button className="btn" onClick={() => run('testTimer')} disabled={!timer?.connected || timer.state !== 'idle'}>

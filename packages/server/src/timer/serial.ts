@@ -1,14 +1,14 @@
 /**
- * Serial transport for the Derby Magic timer.
+ * Serial transport for track timers.
  *
- * The timer is a plain serial device behind a Microchip MCP2221 USB bridge
- * (vendor id 04D8). Current firmware talks at 19200 8N1, older units at 9600.
- * Lines end in "\n" (with an optional "\r"); commands are single characters
- * with no terminator, exactly as DerbyNet sends them.
+ * Opens a COM port with a profile's settings, splits the byte stream into
+ * lines for the core `TimerSession`, and recognises which timer is on the
+ * other end by probing the way DerbyNet does: settle it if the profile says
+ * so, send the probe command, and expect its response patterns in order.
  */
 
 import { SerialPort } from 'serialport';
-import { DERBY_MAGIC, parseDerbyMagicLine, type TimerPort } from '@derby/core';
+import { detectableProfiles, findProfile, TIMER_PROFILES, type SerialParams, type TimerPort, type TimerProfile } from '@derby/core';
 
 export interface SerialPortInfo {
   path: string;
@@ -16,7 +16,7 @@ export interface SerialPortInfo {
   vendorId?: string;
   productId?: string;
   friendlyName?: string;
-  /** True when the USB vendor id matches the MCP2221 bridge the timer uses. */
+  /** True when the USB vendor id is one a known timer uses. */
   likelyTimer: boolean;
 }
 
@@ -28,6 +28,8 @@ export interface RawPort {
   close(): Promise<void>;
 }
 
+const KNOWN_VENDORS = new Set(TIMER_PROFILES.flatMap((p) => p.usbVendorIds ?? []).map((v) => v.toUpperCase()));
+
 export async function listSerialPorts(): Promise<SerialPortInfo[]> {
   const ports = await SerialPort.list();
   return ports.map((p) => ({
@@ -36,13 +38,13 @@ export async function listSerialPorts(): Promise<SerialPortInfo[]> {
     vendorId: p.vendorId,
     productId: p.productId,
     friendlyName: (p as { friendlyName?: string }).friendlyName,
-    likelyTimer: (p.vendorId ?? '').toUpperCase() === DERBY_MAGIC.usbVendorId,
+    likelyTimer: KNOWN_VENDORS.has((p.vendorId ?? '').toUpperCase()),
   }));
 }
 
-function openRawPort(path: string, baudRate: number): Promise<RawPort> {
+function openRawPort(path: string, params: SerialParams): Promise<RawPort> {
   return new Promise((resolve, reject) => {
-    const port = new SerialPort({ path, baudRate, dataBits: DERBY_MAGIC.dataBits, stopBits: DERBY_MAGIC.stopBits, parity: DERBY_MAGIC.parity, autoOpen: false });
+    const port = new SerialPort({ path, baudRate: params.baud, dataBits: params.dataBits, stopBits: params.stopBits, parity: params.parity, autoOpen: false });
     port.open((err) => {
       if (err) return reject(err);
       resolve({
@@ -62,6 +64,9 @@ function openRawPort(path: string, baudRate: number): Promise<RawPort> {
   });
 }
 
+/** A reply with no line ending (some timers) is taken as a line after this much silence. */
+const SILENCE_FLUSH_MS = 120;
+
 /**
  * Splits the byte stream into lines and exposes the `TimerPort` interface the
  * core `TimerSession` expects.
@@ -70,19 +75,24 @@ export class SerialTimerPort implements TimerPort {
   private listeners = new Set<(line: string) => void>();
   private closeListeners = new Set<(err?: Error | null) => void>();
   private buffer = '';
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private closed = false;
 
   constructor(
     private readonly raw: RawPort,
     readonly path: string,
-    readonly baudRate: number,
+    readonly params: SerialParams,
   ) {
-    raw.onData((chunk) => this.feed(chunk.toString()));
+    raw.onData((chunk) => this.feed(chunk.toString('latin1')));
     raw.onClose((err) => {
       if (this.closed) return;
       this.closed = true;
       for (const l of this.closeListeners) l(err);
     });
+  }
+
+  get baudRate(): number {
+    return this.params.baud;
   }
 
   write(command: string): void {
@@ -102,6 +112,7 @@ export class SerialTimerPort implements TimerPort {
   async close(): Promise<void> {
     if (this.closed) return;
     this.closed = true;
+    if (this.flushTimer) clearTimeout(this.flushTimer);
     await this.raw.close();
   }
 
@@ -112,25 +123,48 @@ export class SerialTimerPort implements TimerPort {
     while ((idx = this.buffer.search(/[\r\n]/)) >= 0) {
       const line = this.buffer.slice(0, idx);
       this.buffer = this.buffer.slice(idx + 1);
-      if (line.trim() === '') continue;
-      for (const l of this.listeners) l(line);
+      if (line.trim() !== '') this.deliver(line);
     }
-    // Some firmware may omit the newline after the identity reply; flush a
-    // recognisable identity string even without a terminator.
-    if (DERBY_MAGIC.identityPattern.test(this.buffer)) {
-      const line = this.buffer;
-      this.buffer = '';
-      for (const l of this.listeners) l(line);
+    if (this.flushTimer) clearTimeout(this.flushTimer);
+    if (this.buffer.trim() !== '') {
+      this.flushTimer = setTimeout(() => {
+        this.flushTimer = null;
+        const line = this.buffer;
+        this.buffer = '';
+        if (line.trim() !== '') this.deliver(line);
+      }, SILENCE_FLUSH_MS);
+      this.flushTimer.unref?.();
     }
+  }
+
+  private deliver(line: string): void {
+    for (const l of this.listeners) l(line);
   }
 }
 
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** How long a timer gets to settle after the pre-probe commands, and to answer the probe. */
+const PRE_PROBE_SETTLE_MS = 1500;
+const PROBE_RESPONSE_MS = 700;
+
 /**
- * Send the identify command and wait for "Derby Magic" in the reply.
- * Resolves with the identity text or null when nothing recognisable arrived.
+ * Ask a port whether this profile's timer is on it: the responses must arrive
+ * in order within the window. Resolves with the identifying line, or null.
  */
-export function probeIdentity(port: SerialTimerPort, timeoutMs = 2000): Promise<string | null> {
+export async function probeProfile(port: SerialTimerPort, profile: TimerProfile, timeoutMs = PROBE_RESPONSE_MS, settleMs = PRE_PROBE_SETTLE_MS): Promise<string | null> {
+  const prober = profile.prober;
+  if (!prober) return null;
+  if (prober.preProbe) {
+    for (const command of prober.preProbe) {
+      port.write(command + profile.eol);
+      await sleep(100);
+    }
+    await sleep(settleMs);
+  }
   return new Promise((resolve) => {
+    let index = 0;
+    let pattern = new RegExp(prober.responses[0]!);
     let done = false;
     const finish = (value: string | null) => {
       if (done) return;
@@ -139,61 +173,80 @@ export function probeIdentity(port: SerialTimerPort, timeoutMs = 2000): Promise<
       unsubscribe();
       resolve(value);
     };
-    const unsubscribe = port.onLine((line) => {
-      for (const event of parseDerbyMagicLine(line)) {
-        if (event.type === 'identity') finish(event.text);
-      }
+    const unsubscribe = port.onLine((raw) => {
+      const line = raw.replace(/\x1b/g, '').trim();
+      if (!pattern.test(line)) return;
+      index++;
+      if (index >= prober.responses.length) finish(line);
+      else pattern = new RegExp(prober.responses[index]!);
     });
     const timer = setTimeout(() => finish(null), timeoutMs);
-    port.write(DERBY_MAGIC.commands.identify);
+    port.write(prober.probe + profile.eol);
   });
 }
 
 export interface ConnectOptions {
-  /** Specific port, or undefined to try the ports that look like the timer first, then everything else. */
+  /** Specific port, or undefined to try the ports that look like a timer first, then everything else. */
   path?: string;
-  /** Specific baud rate, or undefined to try 19200 then 9600. */
+  /** Override the profile's baud rate (older Derby Magic firmware, say). */
   baudRate?: number;
+  /** A profile key to connect as, or 'auto' / undefined to try every detectable profile. */
+  profileKey?: string;
   probeTimeoutMs?: number;
-  open?: (path: string, baud: number) => Promise<RawPort>;
+  /** Settle time after a profile's pre-probe commands (tests shorten it). */
+  settleMs?: number;
+  open?: (path: string, params: SerialParams) => Promise<RawPort>;
   list?: () => Promise<SerialPortInfo[]>;
+  /** Progress, for the timer log. */
+  onProgress?: (message: string) => void;
 }
 
 export interface ConnectResult {
   port: SerialTimerPort;
+  profile: TimerProfile;
   identity: string | null;
-  /** True when the timer answered the identify command; false = opened blind on the requested settings. */
+  /** True when the timer answered the probe; false = opened blind on the requested settings. */
   verified: boolean;
 }
 
 /**
- * Find and open the timer. With an explicit path and baud the port is opened
- * even if the timer does not answer (some firmware may be quiet), and the
- * result says so. With anything unspecified, only a port that answers is used.
+ * Find and open the timer. With an explicit profile, path and baud the port
+ * is opened even if the timer does not answer (profiles without a prober can
+ * only work this way), and the result says so. Otherwise only a port that
+ * answers a probe is used.
  */
-export async function connectDerbyMagic(options: ConnectOptions = {}): Promise<ConnectResult> {
+export async function connectTimer(options: ConnectOptions = {}): Promise<ConnectResult> {
   const open = options.open ?? openRawPort;
   const list = options.list ?? listSerialPorts;
-  const bauds = options.baudRate ? [options.baudRate] : [...DERBY_MAGIC.baudRates];
+  const explicitProfile = options.profileKey && options.profileKey !== 'auto' ? findProfile(options.profileKey) : undefined;
+  if (options.profileKey && options.profileKey !== 'auto' && !explicitProfile) throw new Error(`Unknown timer "${options.profileKey}".`);
+  const candidates = explicitProfile ? [explicitProfile] : detectableProfiles();
+
   let paths: string[];
   if (options.path) {
     paths = [options.path];
   } else {
     const ports = await list();
-    paths = [...ports.filter((p) => p.likelyTimer), ...ports.filter((p) => !p.likelyTimer)].map((p) => p.path);
+    const vendorsOf = (p: SerialPortInfo) => (p.vendorId ?? '').toUpperCase();
+    // Ports whose USB bridge matches the wanted profile first, then other timer-like bridges, then the rest.
+    const preferred = explicitProfile ? new Set((explicitProfile.usbVendorIds ?? []).map((v) => v.toUpperCase())) : new Set<string>();
+    paths = [...ports.filter((p) => preferred.has(vendorsOf(p))), ...ports.filter((p) => !preferred.has(vendorsOf(p)) && p.likelyTimer), ...ports.filter((p) => !preferred.has(vendorsOf(p)) && !p.likelyTimer)].map((p) => p.path);
   }
   if (paths.length === 0) throw new Error('No serial ports found. Is the timer plugged in?');
 
-  const explicit = !!(options.path && options.baudRate);
+  // Blind opening is only sensible when nothing is left to guess.
+  const blind = !!(explicitProfile && options.path && (options.baudRate || !explicitProfile.prober || true));
   let lastError: Error | null = null;
   for (const path of paths) {
-    for (const baud of bauds) {
+    for (const profile of candidates) {
+      const params: SerialParams = { ...profile.params, baud: options.baudRate ?? profile.params.baud };
       let port: SerialTimerPort | null = null;
       try {
-        port = new SerialTimerPort(await open(path, baud), path, baud);
-        const identity = await probeIdentity(port, options.probeTimeoutMs ?? 2000);
-        if (identity !== null) return { port, identity, verified: true };
-        if (explicit) return { port, identity: null, verified: false };
+        options.onProgress?.(`trying ${profile.name} on ${path} @ ${params.baud}`);
+        port = new SerialTimerPort(await open(path, params), path, params);
+        const identity = profile.prober ? await probeProfile(port, profile, options.probeTimeoutMs, options.settleMs) : null;
+        if (identity !== null) return { port, profile, identity, verified: true };
+        if (blind) return { port, profile, identity: null, verified: false };
         await port.close();
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
@@ -204,6 +257,8 @@ export async function connectDerbyMagic(options: ConnectOptions = {}): Promise<C
   throw new Error(
     lastError
       ? `Could not open the timer: ${lastError.message}`
-      : `No timer answered on ${paths.join(', ')}. Check the cable and that nothing else has the port open.`,
+      : explicitProfile
+        ? `No ${explicitProfile.name} answered on ${paths.join(', ')}. Check the cable and that nothing else has the port open.`
+        : `No known timer answered on ${paths.join(', ')}. Check the cable, or pick the timer by hand and set its port.`,
   );
 }

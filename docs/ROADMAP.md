@@ -11,6 +11,9 @@ the same room, and it will surface the bugs that matter.
 - Derby Magic on USB: connect from the Setup tab, lane test, run a den with
   the real gate. Watch for: baud fallback, lines with several results, the
   DNF prompt timing, "B" arriving during a countdown.
+- Any other timer anyone can bring (FastTrack, The Champ, The Judge, ...):
+  the profiles are ported from DerbyNet and tested only against transcripts,
+  so a lane test and a look at the timer log are the first job.
 - iPhone as pit crew phone: certificate install, live camera outline, scout
   video with microphone prompt, uploads over the hotspot.
 - iPhone as replay camera on a tripod: wake lock, clip timing, conversion.

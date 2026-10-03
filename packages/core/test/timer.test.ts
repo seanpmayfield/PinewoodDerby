@@ -126,15 +126,18 @@ describe('TimerSession with the simulator', () => {
     expect(seen).toEqual([1, 2, 3, 4]);
   });
 
-  it('ignores results for lanes it was not told about', () => {
+  it('quietly ignores results for lanes it was not told about', () => {
     const port = new SimulatedTimerPort({ timeScale: 0 });
     const session = new TimerSession(port, { heatTimeoutMs: 10_000 });
     const unexpected: string[] = [];
+    const completed: { lanes: { lane: number }[] }[] = [];
     session.on('unexpected', (e) => unexpected.push(e.message));
+    session.on('heat-complete', (e) => completed.push(e));
     port.setOccupiedLanes([1, 2, 3]);
     session.arm([1, 2]);
     port.releaseGate();
-    expect(unexpected.some((m) => m.includes('lane 3'))).toBe(true);
+    expect(unexpected).toEqual([]);
+    expect(completed[0]!.lanes.map((l) => l.lane)).toEqual([1, 2]);
     expect(session.state).toBe('idle');
   });
 

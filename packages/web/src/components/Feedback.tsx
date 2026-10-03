@@ -158,7 +158,7 @@ function describe(state: Derby | null, view: DerbyEngine | null, timer: TimerSta
   }
 
   if (timer) {
-    lines.push(`timer: ${timer.kind} state=${timer.state} connected=${yn(timer.connected)} port=${timer.port ?? '-'} verified=${yn(timer.verified)} replayCam=${timer.replayCamState ?? '-'} lastError=${timer.lastError ?? '-'}`);
+    lines.push(`timer: ${timer.kind}${timer.profile ? ` (${timer.profile.name})` : ''} state=${timer.state} connected=${yn(timer.connected)} port=${timer.port ?? '-'} verified=${yn(timer.verified)} replayCam=${timer.replayCamState ?? '-'} lastError=${timer.lastError ?? '-'}`);
   }
 
   lines.push(`device: ${navigator.userAgent}`);

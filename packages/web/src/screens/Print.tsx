@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { brandingUrl } from '../lib/branding.ts';
 import { useDerby } from '../lib/derby.tsx';
 import { carImage, carInfo, fmtEventDate, fmtTime, groupPath, ordinal, scoringLabel, type CarInfo } from '../lib/format.ts';
+import { carCode, code128Svg } from '../print/code128.ts';
 import type { Award, Round } from '@derby/core';
 import '../print/print.css';
 
@@ -147,6 +148,37 @@ export function PrintRoster() {
           ))}
         </tbody>
       </table>
+    </Shell>
+  );
+}
+
+/**
+ * Car tags: one label per car with the number, racer, den and a barcode the
+ * pit crew's scanner or phone reads to open the car. Sized for three-across
+ * label sheets; plain paper and scissors work too.
+ */
+export function PrintLabels() {
+  const { state } = useDerby();
+  if (!state) return null;
+  const rows = state.cars
+    .filter((c) => !c.withdrawn)
+    .map((c) => carInfo(state, c.id))
+    .filter((i): i is CarInfo => !!i)
+    .sort((a, b) => a.number - b.number);
+  return (
+    <Shell title="Car tags" subtitle={`${rows.length} tags · tape one to each car box or check-in card`}>
+      <div className="labels">
+        {rows.map((i) => (
+          <div className="label" key={i.car.id}>
+            <div className="label-event">{state.name}</div>
+            <div className="label-num">#{i.number}</div>
+            <div className="label-name">{i.racerName}</div>
+            <div className="label-sub">{[i.carName, i.groupName].filter(Boolean).join(' · ')}</div>
+            <div className="label-code" dangerouslySetInnerHTML={{ __html: code128Svg(carCode(i.number), { module: 2, height: 36 }) }} />
+            <div className="label-text">{carCode(i.number)}</div>
+          </div>
+        ))}
+      </div>
     </Shell>
   );
 }

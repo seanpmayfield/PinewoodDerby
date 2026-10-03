@@ -296,12 +296,13 @@ describe('server', () => {
     const app = await start();
     expect(app.timer.status.kind).toBe('simulator');
     // The real timer is not attached here: connecting must fail cleanly, not hang or throw.
-    const res = await command(app, 'configureTimer', { kind: 'derby-magic', port: 'COM99', baud: 19200 });
+    const res = await command(app, 'configureTimer', { kind: 'DerbyMagic', port: 'COM99', baud: 19200 });
     expect(res.body.ok).toBe(true);
-    expect(app.timer.status.kind).toBe('derby-magic');
+    expect(app.timer.status.kind).toBe('DerbyMagic');
     expect(app.timer.status.connected).toBe(false);
     expect(app.timer.status.lastError).toBeTruthy();
-    expect(JSON.parse(app.store.getMeta('timerConfig')!)).toMatchObject({ kind: 'derby-magic', port: 'COM99', baud: 19200 });
+    expect(JSON.parse(app.store.getMeta('timerConfig')!)).toMatchObject({ kind: 'DerbyMagic', port: 'COM99', baud: 19200 });
+    expect((await command(app, 'configureTimer', { kind: 'NoSuchTimer' })).status).toBe(400);
     const armed = await command(app, 'testTimer');
     expect(armed.body.code).toBe('timer-offline');
     const back = await command(app, 'configureTimer', { kind: 'simulator' });

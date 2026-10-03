@@ -6,6 +6,7 @@ export { packHeats, type PackNeed, type PackOptions, type PackedHeat } from './s
 export * from './scoring/index.js';
 export { DerbyEngine, DerbyError, type EngineOptions, type CreateDerbyInput, type LaneTimeInput } from './race/engine.js';
 export * from './timer/protocol.js';
+export * from './timer/profiles.js';
 export * from './timer/session.js';
 export { SimulatedTimerPort, type SimulatedTimerOptions } from './timer/simulator.js';
 export * from './roster/csv.js';

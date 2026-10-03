@@ -7,7 +7,7 @@ import https from 'node:https';
 import os from 'node:os';
 import path from 'node:path';
 import { statSync } from 'node:fs';
-import { DerbyEngine, DerbyError, findPreset, FORMAT_PRESETS, type Derby } from '@derby/core';
+import { DerbyEngine, DerbyError, findPreset, findProfile, FORMAT_PRESETS, type Derby } from '@derby/core';
 import type { ServerConfig } from './config.js';
 import { DerbyStore, type HistoryEntry } from './store.js';
 import { BrandingStore, HeadshotStore, MediaStore, PhotoStore, ReplayStore } from './media.js';
@@ -668,8 +668,9 @@ function readTimerConfig(raw: string | null): TimerConfig | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as Partial<TimerConfig>;
-    if (parsed.kind !== 'simulator' && parsed.kind !== 'derby-magic') return null;
-    return { kind: parsed.kind, port: typeof parsed.port === 'string' ? parsed.port : null, baud: typeof parsed.baud === 'number' ? parsed.baud : null };
+    const kind = parsed.kind === 'derby-magic' ? 'DerbyMagic' : parsed.kind;
+    if (typeof kind !== 'string' || (kind !== 'simulator' && kind !== 'auto' && !findProfile(kind))) return null;
+    return { kind, port: typeof parsed.port === 'string' ? parsed.port : null, baud: typeof parsed.baud === 'number' ? parsed.baud : null };
   } catch {
     return null;
   }

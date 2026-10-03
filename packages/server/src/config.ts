@@ -2,7 +2,8 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export type TimerKind = 'simulator' | 'derby-magic';
+/** 'simulator', 'auto' (probe for any known timer), or a timer profile key from @derby/core. */
+export type TimerKind = string;
 
 export interface ServerConfig {
   host: string;
@@ -42,7 +43,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     dataDir,
     usbBackup: env['DERBY_USB_BACKUP'] !== '0',
     pin: env['DERBY_PIN'] || null,
-    timer: env['DERBY_TIMER'] === 'derby-magic' ? 'derby-magic' : 'simulator',
+    timer: env['DERBY_TIMER'] || 'simulator',
     serialPort: env['DERBY_SERIAL_PORT'] || null,
     simulatorSpeed: Number(env['DERBY_SIM_SPEED'] ?? 1),
     simulatorDnfChance: Number(env['DERBY_SIM_DNF'] ?? 0.03),

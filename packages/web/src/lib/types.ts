@@ -17,7 +17,14 @@ interface SerialPortInfo {
 
 /** Mirrors `TimerStatus` in the server package. */
 export interface TimerStatus {
-  kind: 'simulator' | 'derby-magic';
+  /** 'simulator', 'auto', or a timer profile key. */
+  kind: string;
+  /** The timer profile in use once connected. */
+  profile: { key: string; name: string } | null;
+  /** The timer can open the start gate itself. */
+  remoteStart: boolean;
+  /** Lanes the timer reported having, if it said. */
+  lanesDetected: number | null;
   connected: boolean;
   connecting: boolean;
   state: 'idle' | 'armed' | 'racing';
