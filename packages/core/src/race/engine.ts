@@ -16,6 +16,7 @@ import {
   type CarShot,
   type Sponsor,
   type Judge,
+  type Ballot,
   type Award,
   type Car,
   type Derby,
@@ -106,6 +107,7 @@ export class DerbyEngine {
       settings: { ...DEFAULT_SETTINGS, ...input.settings },
       presentation: { ...DEFAULT_PRESENTATION },
       branding: { logo: null, sponsors: [] },
+      ballot: { open: false, awardIds: [], votesPerAward: 1, passwordRequired: false, votes: {} },
     };
     return new DerbyEngine(state, options);
   }
@@ -239,6 +241,20 @@ export class DerbyEngine {
     racer.checkedIn = checkedIn;
     this.commit('racers');
     return racer;
+  }
+
+  /** Check a whole den in (or out) at once. Returns how many racers changed. */
+  setGroupCheckedIn(groupId: Id, checkedIn: boolean): number {
+    this.requireGroup(groupId);
+    let changed = 0;
+    for (const racer of this.state.racers) {
+      if (racer.groupId === groupId && racer.checkedIn !== checkedIn) {
+        racer.checkedIn = checkedIn;
+        changed++;
+      }
+    }
+    if (changed) this.commit('racers');
+    return changed;
   }
 
   /**
@@ -903,6 +919,126 @@ export class DerbyEngine {
     const rest = list.filter((s) => !first.includes(s));
     this.state.branding.sponsors = [...first, ...rest];
     this.commit('branding');
+  }
+
+  // ---- people's-choice ballot --------------------------------------------------
+
+  /** Configure voting. Only design and custom awards can be voted on. */
+  setBallot(patch: Partial<Pick<Ballot, 'open' | 'awardIds' | 'votesPerAward' | 'passwordRequired'>>): Ballot {
+    const ballot = this.state.ballot;
+    if (patch.awardIds) {
+      for (const id of patch.awardIds) {
+        const award = this.state.awards.find((a) => a.id === id);
+        if (!award) throw new DerbyError('Award not found.', 'not-found');
+        if (award.kind === 'speed') throw new DerbyError('Speed awards are decided by the clock, not a vote.', 'bad-args');
+      }
+      ballot.awardIds = [...new Set(patch.awardIds)];
+    }
+    if (patch.votesPerAward !== undefined) {
+      const n = Math.round(patch.votesPerAward);
+      if (!Number.isFinite(n) || n < 1 || n > 5) throw new DerbyError('Votes per award must be between 1 and 5.', 'bad-args');
+      ballot.votesPerAward = n;
+    }
+    if (patch.open !== undefined) ballot.open = patch.open;
+    if (patch.passwordRequired !== undefined) ballot.passwordRequired = patch.passwordRequired;
+    this.commit('ballot');
+    return ballot;
+  }
+
+  /** Cars a voter may pick for an award: checked in, racing, and in the award's den if it has one. */
+  ballotCandidates(awardId: Id): Car[] {
+    const award = this.state.awards.find((a) => a.id === awardId);
+    if (!award) throw new DerbyError('Award not found.', 'not-found');
+    return this.state.cars.filter((car) => {
+      if (car.withdrawn) return false;
+      const racer = this.state.racers.find((r) => r.id === car.racerId);
+      if (!racer?.checkedIn) return false;
+      return !award.groupId || (car.groupId ?? racer.groupId) === award.groupId;
+    });
+  }
+
+  /** One voter's picks for one award; an empty list withdraws them. */
+  castVote(voterId: string, awardId: Id, carIds: Id[]): void {
+    const ballot = this.state.ballot;
+    if (!ballot.open) throw new DerbyError('Voting is closed.', 'bad-state');
+    if (!ballot.awardIds.includes(awardId)) throw new DerbyError('That award is not up for a vote.', 'bad-args');
+    if (!/^[\w-]{8,64}$/.test(voterId)) throw new DerbyError('Bad voter id.', 'bad-args');
+    const picks = [...new Set(carIds)];
+    if (picks.length > ballot.votesPerAward) throw new DerbyError(`Pick at most ${ballot.votesPerAward}.`, 'bad-args');
+    const allowed = new Set(this.ballotCandidates(awardId).map((c) => c.id));
+    for (const id of picks) if (!allowed.has(id)) throw new DerbyError('That car cannot be voted for.', 'bad-args');
+    const mine = ballot.votes[voterId] ?? {};
+    if (picks.length) mine[awardId] = picks;
+    else delete mine[awardId];
+    if (Object.keys(mine).length) ballot.votes[voterId] = mine;
+    else delete ballot.votes[voterId];
+    this.commit('ballot');
+  }
+
+  /** Votes per car for an award, most first. */
+  voteTally(awardId: Id): { carId: Id; votes: number }[] {
+    const counts = new Map<Id, number>();
+    for (const byAward of Object.values(this.state.ballot.votes)) {
+      for (const carId of byAward[awardId] ?? []) counts.set(carId, (counts.get(carId) ?? 0) + 1);
+    }
+    return [...counts.entries()].map(([carId, votes]) => ({ carId, votes })).sort((a, b) => b.votes - a.votes);
+  }
+
+  /** How many phones have voted on anything. */
+  voterCount(): number {
+    return Object.keys(this.state.ballot.votes).length;
+  }
+
+  // ---- looking back ---------------------------------------------------------------
+
+  /**
+   * Is any lane fast or slow? For each lane, the mean finishing time is
+   * compared with the mean on the other lanes, scaled by the standard error
+   * of that difference; beyond two standard errors the lane is called out.
+   * Needs a few finished heats per lane to mean anything.
+   */
+  laneBias(): { heats: number; lanes: { lane: number; runs: number; meanSec: number | null; diffSec: number | null; z: number | null; verdict: 'fast' | 'slow' | 'even' | 'few' }[] } {
+    const samples: number[][] = Array.from({ length: this.state.laneCount }, () => []);
+    let heats = 0;
+    for (const round of this.state.rounds) {
+      for (const heat of round.heats) {
+        if (heat.status !== 'finished' || !heat.result) continue;
+        heats++;
+        for (const lane of heat.result.lanes) if (lane.carId && lane.timeSec !== null && !lane.dnf) samples[lane.lane - 1]?.push(lane.timeSec);
+      }
+    }
+    const stats = (xs: number[]) => {
+      const n = xs.length;
+      const mean = n ? xs.reduce((a, b) => a + b, 0) / n : 0;
+      const variance = n > 1 ? xs.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1) : 0;
+      return { n, mean, variance };
+    };
+    const lanes = samples.map((xs, i) => {
+      const mine = stats(xs);
+      const others = stats(samples.filter((_, j) => j !== i).flat());
+      if (mine.n < 3 || others.n < 3) return { lane: i + 1, runs: mine.n, meanSec: mine.n ? mine.mean : null, diffSec: null, z: null, verdict: 'few' as const };
+      const diff = mine.mean - others.mean;
+      const se = Math.sqrt(mine.variance / mine.n + others.variance / others.n);
+      const z = se > 0 ? diff / se : 0;
+      return { lane: i + 1, runs: mine.n, meanSec: mine.mean, diffSec: diff, z, verdict: z < -2 ? ('fast' as const) : z > 2 ? ('slow' as const) : ('even' as const) };
+    });
+    return { heats, lanes };
+  }
+
+  /** Every recorded heat in the order it happened, with the time since the one before. */
+  heatTimeline(): { heat: Heat; roundName: string; position: number; recordedAt: string; gapSec: number | null; voided: boolean }[] {
+    const entries: { heat: Heat; roundName: string; position: number; recordedAt: string }[] = [];
+    for (const round of this.state.rounds) {
+      const order = this.heatOrder(round);
+      round.heats.forEach((heat) => {
+        if (heat.result) entries.push({ heat, roundName: round.name, position: order.indexOf(heat) + 1, recordedAt: heat.result.recordedAt });
+      });
+    }
+    entries.sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
+    return entries.map((e, i) => {
+      const previous = entries[i - 1];
+      return { ...e, gapSec: previous ? (new Date(e.recordedAt).getTime() - new Date(previous.recordedAt).getTime()) / 1000 : null, voided: e.heat.status === 'voided' };
+    });
   }
 
   /** Every award a car has won so far, for spreading awards around. */

@@ -186,6 +186,9 @@ export function RaceTab() {
             <a href="/print/certificates" target="_blank" rel="noreferrer">
               Certificates
             </a>
+            <a href="/print/retrospective" target="_blank" rel="noreferrer">
+              Looking back
+            </a>
           </div>
         )}
       </aside>

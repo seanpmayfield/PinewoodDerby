@@ -994,3 +994,10 @@
   box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.35);
   pointer-events: none;
 }
+
+.pit-den {
+  appearance: auto;
+  flex: 0 0 auto;
+  width: auto;
+  padding-right: 1.6rem;
+}

@@ -1628,6 +1628,18 @@ textarea {
   gap: 0.5rem;
 }
 
+.link-sm {
+  color: var(--info);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.home-card-vote {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 /* ---- feedback button (temporary, while the program is being tried out) -------- */
 
 .fb-button {

@@ -88,10 +88,14 @@ devices without a mail app.
 
 Everything runs on the race-day Wi-Fi, and that network's password is the
 fence: anyone on it can open the screens and read the roster, and, unless a
-PIN is set, change things. Set `DERBY_PIN` (see the developer section) to
-require a PIN for every change from the phones and tablets; the screens stay
-viewable. Only the pit crew, judges and coordinator devices should be on the
-hotspot in any case.
+PIN is set, change things. Two PINs can be set on the Setup tab (or with
+`DERBY_PIN` and `DERBY_CREW_PIN`, see the developer section): with a
+coordinator PIN set, every change needs a PIN; the crew PIN only allows
+check-in, the pit table and judging, so a volunteer's phone cannot start a
+round or change results. A screen asks for a PIN the first time it needs one
+and remembers it. Voting from the audience's phones never needs a PIN, only
+the voting password if the judges set one. Only the pit crew, judges and
+coordinator devices should be on the hotspot in any case.
 
 The phones trust the server's own certificate authority so their cameras
 work. That root is limited by name constraints to private LAN addresses and
@@ -284,6 +288,11 @@ new photos show up on the slide as they happen; the projector never needs a
 refresh, and every open page reloads itself when a new build of the program
 is installed.
 
+**A whole den at once.** Pick a den from the menu beside the filters and
+*Check in all of them* checks in everyone in it who is not here yet; the
+Roster tab has the same on each den's row. Handy when a den leader walks the
+whole den in together.
+
 **Car tags and barcodes.** *Car tags* under Print on the Race tab makes a
 sheet of labels, one per car, with the number, racer, den and a barcode. Tape
 one to each car's box or check-in card. At the table, a USB barcode scanner
@@ -341,6 +350,21 @@ shows the other judges' marks beside yours, and a car's total is the average
 across the judges who scored each criterion. Scores are a guide for the
 judges; winners are still picked by hand.
 
+**People's choice.** Under *People's choice* on the Judges screen, tick the
+design awards the audience may vote on, set how many picks each person gets
+(letting young racers pick two or three means a vote for their own car does
+not use up the ballot), optionally set a voting password to announce in the
+room, and open voting. While it is open the home page shows a *Vote* card and
+the welcome slide shows a QR code to `/vote`, where each phone taps its
+favourites from the car photos; picks save at once and can be changed until
+voting closes, one ballot per phone. The Judges screen shows the tally with a
+*Choose* button beside each car. The judges keep the final say, not least to
+break ties.
+
+**One-off awards.** *+ Award* on any car card invents an award for that scout
+on the spot ("Best Use of the Color Red") and gives it to them; it joins the
+ceremony and the certificates as a special award.
+
 Speed awards are listed read-only; they come from the race results. Nominee
 lists, scores and winners are all undoable from the coordinator screen.
 
@@ -385,6 +409,9 @@ Under *Print* on the Race tab, each a plain page with a Print button; choose
   **Standings** for the round, and the **Roster**.
 - **Full results**: every round's standings and the awards list on one
   document.
+- **Looking back**: a lane bias analysis (each lane's average time against
+  the others, in standard errors, so a slow lane shows up) and a timeline of
+  every recorded heat with the minutes between heats, for planning next year.
 - **Certificates**: one page per award with a winner, with the racer's name,
   car name and number, den, the car photo (the cutout when there is one), the
   place and time for speed awards, and signature lines. Speed awards get
@@ -467,7 +494,8 @@ full-size page captures.
 | `DERBY_PORT` | `8080` | HTTP port |
 | `DERBY_HTTPS_PORT` | `8443` | HTTPS port for phone cameras; `0` disables HTTPS |
 | `DERBY_DATA_DIR` | `data/` (installed: `C:\ProgramData\Pinewood Derby`) | Database, photos, clips, headshots and certificates |
-| `DERBY_PIN` | none | A PIN every POST must carry in the `x-derby-pin` header |
+| `DERBY_PIN` | none | Coordinator PIN every change must carry in the `x-derby-pin` header (the Setup tab's PINs override) |
+| `DERBY_CREW_PIN` | none | PIN that allows only check-in, pit and judging commands |
 | `DERBY_TIMER` | `simulator` | `simulator`, `auto`, or a timer key such as `DerbyMagic` or `FastTrack-K` (the Setup tab's choice overrides this) |
 | `DERBY_SERIAL_PORT` | auto | COM port of the timer |
 | `DERBY_SIM_SPEED` | `1` | Simulator speed; `0` is instant |
@@ -528,6 +556,7 @@ Every page connects to `/ws` and receives the full state on every change plus
 live timer and backup status, so nothing polls. Mutations go through
 `POST /api/command` with `{ name, args }`; the names are the handlers in
 `packages/server/src/commands.ts`. Uploads are raw bodies on
+`POST /api/vote` takes a phone's ballot (`voterId`, `awardId`, `carIds`, optional `password`) with no PIN.
 `POST /api/photos/:carId`, `/api/replays/:heatId` and `/api/headshots/:racerId`,
 served back from the same paths by key. `GET /api/state`, `/api/info`,
 `/api/diagnostics`, `/api/history` and `/api/export`; `POST /api/import`.

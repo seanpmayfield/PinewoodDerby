@@ -140,15 +140,21 @@ export function SetupTab() {
           </p>
         )}
         <p className="muted small">{info ? `${info.clients} screen${info.clients === 1 ? '' : 's'} connected.` : ''}</p>
+        <h3>PINs</h3>
+        <p className="muted small">
+          With a coordinator PIN set, every change from any screen needs a PIN. The crew PIN only allows check-in, the pit table and judging, so volunteers' phones cannot touch the race. Screens
+          ask for a PIN the first time they need one and remember it.
+        </p>
+        <PinFields coordinatorSet={!!info?.pinRequired} crewSet={!!info?.crewPinSet} onSaved={() => fetchInfo().then(setInfo).catch(() => undefined)} />
         <label className="field">
-          <span>PIN {info?.pinRequired ? '(required)' : '(not set on server)'}</span>
+          <span>This screen's PIN</span>
           <input
             value={pin}
             onChange={(e) => {
               setPinState(e.target.value);
               setPin(e.target.value);
             }}
-            placeholder="Coordinator PIN"
+            placeholder={info?.pinRequired ? 'Coordinator PIN' : 'No PIN needed'}
           />
         </label>
       </section>
@@ -476,6 +482,46 @@ function TimerPanel() {
 
       <pre className="log">{timer.log.join('\n') || 'no traffic yet'}</pre>
     </section>
+  );
+}
+
+function PinFields({ coordinatorSet, crewSet, onSaved }: { coordinatorSet: boolean; crewSet: boolean; onSaved: () => void }) {
+  const { run } = useDerby();
+  const [coordinator, setCoordinator] = useState('');
+  const [crew, setCrew] = useState('');
+  const save = async (patch: { coordinator?: string | null; crew?: string | null }) => {
+    const ok = await run('setPins', { patch });
+    if (ok !== undefined) {
+      if (patch.coordinator !== undefined) {
+        setCoordinator('');
+        // The coordinator's own screen keeps working with the new PIN.
+        if (patch.coordinator) setPin(patch.coordinator);
+      }
+      if (patch.crew !== undefined) setCrew('');
+      onSaved();
+    }
+  };
+  return (
+    <>
+      <label className="field">
+        <span>Coordinator PIN {coordinatorSet ? '(set)' : '(none)'}</span>
+        <span className="field-row">
+          <input value={coordinator} onChange={(e) => setCoordinator(e.target.value)} placeholder={coordinatorSet ? 'New PIN' : 'Set a PIN'} />
+          <button className="btn btn-sm" onClick={() => save({ coordinator: coordinator.trim() || null })} disabled={!coordinator.trim() && !coordinatorSet}>
+            {coordinator.trim() ? 'Set' : 'Clear'}
+          </button>
+        </span>
+      </label>
+      <label className="field">
+        <span>Crew PIN {crewSet ? '(set)' : '(none)'}</span>
+        <span className="field-row">
+          <input value={crew} onChange={(e) => setCrew(e.target.value)} placeholder={crewSet ? 'New PIN' : 'Set a PIN'} />
+          <button className="btn btn-sm" onClick={() => save({ crew: crew.trim() || null })} disabled={!crew.trim() && !crewSet}>
+            {crew.trim() ? 'Set' : 'Clear'}
+          </button>
+        </span>
+      </label>
+    </>
   );
 }
 

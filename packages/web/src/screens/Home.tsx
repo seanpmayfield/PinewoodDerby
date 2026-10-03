@@ -29,6 +29,12 @@ export function Home() {
         <p className="muted">{state?.date}</p>
       </header>
       <div className="home-grid">
+        {state?.ballot.open && (
+          <Link to="/vote" className="home-card home-card-vote">
+            <h2>Vote</h2>
+            <p>People's choice: pick your favourite cars for the design awards.</p>
+          </Link>
+        )}
         {SCREENS.map((s) => (
           <Link key={s.to} to={s.to} className="home-card">
             <h2>{s.title}</h2>

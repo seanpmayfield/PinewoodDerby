@@ -7,6 +7,7 @@ import { Callout } from './Callout.tsx';
 import { IntroView } from './stage.tsx';
 import { CarCarousel } from './Carousel.tsx';
 import { brandingUrl } from '../lib/branding.ts';
+import { VoteQr } from '../components/VoteQr.tsx';
 
 // ---------------------------------------------------------------------------
 // Welcome
@@ -27,6 +28,7 @@ export function WelcomeView() {
         {state.presentation.message && <div className="aud-message">{state.presentation.message}</div>}
       </div>
       <CarCarousel />
+      {state.ballot.open && state.ballot.awardIds.length > 0 && <VoteQr />}
     </div>
   );
 }
@@ -335,7 +337,7 @@ function NomineesCard({ award }: { award: Award }) {
   const nominees = (award.nominees ?? []).map((id) => carInfo(state, id)).filter((i): i is NonNullable<typeof i> => !!i && !i.car.withdrawn);
   return (
     <div className={`aud-award is-big aud-nominees kind-${award.kind}`}>
-      <span className="aud-kicker">{award.kind === 'speed' ? 'Speed award' : 'Design award'}</span>
+      <span className="aud-kicker">{award.kind === 'speed' ? 'Speed award' : award.kind === 'custom' ? 'Special award' : 'Design award'}</span>
       <div className="aud-award-name">{award.name}</div>
       <div className="aud-nominees-kicker">And the nominees are…</div>
       <div className={`aud-nominees-grid count-${Math.min(nominees.length, 6)}`}>
@@ -360,7 +362,7 @@ function AwardCard({ award, big = false }: { award: Award; big?: boolean }) {
   const info = award.carId ? carInfo(state, award.carId) : null;
   return (
     <div className={`aud-award ${big ? 'is-big' : ''} kind-${award.kind}`}>
-      <span className="aud-kicker">{award.kind === 'speed' ? 'Speed award' : 'Design award'}</span>
+      <span className="aud-kicker">{award.kind === 'speed' ? 'Speed award' : award.kind === 'custom' ? 'Special award' : 'Design award'}</span>
       <div className="aud-award-name">{award.name}</div>
       {info ? (
         <div className={`aud-award-winner ${big && info.racer?.headshot ? 'has-headshot' : ''}`}>

@@ -38,7 +38,7 @@ const UNDOABLE = new Set([
   'flowNext', 'flowStandings', 'flowReset',
   'setAwardWinner', 'revealNextAward', 'unrevealLastAward', 'resetCeremony', 'generateSpeedAwards', 'computeSpeedAwards',
   'addAward', 'removeAward', 'reorderAwards', 'setAwardNominee', 'setJudgingCriteria', 'setCarScore',
-  'addSponsor', 'updateSponsor', 'reorderSponsors', 'addJudge', 'renameJudge', 'removeJudge',
+  'addSponsor', 'updateSponsor', 'reorderSponsors', 'addJudge', 'renameJudge', 'removeJudge', 'checkInGroup', 'setBallot',
   'addRacer', 'updateRacer', 'removeRacer', 'setCheckedIn', 'importRoster',
   'updateCar', 'setWeight', 'setInspection', 'withdrawCar',
   'addGroup', 'updateGroup', 'setFormat', 'updateSettings', 'updateDerby', 'seedDemo',
@@ -51,6 +51,14 @@ const USB_BACKUP_KEY = 'usbBackup';
 const ACTIVE_KEY = 'activeDerbyId';
 const TIMER_KEY = 'timerConfig';
 const WIZARD_KEY = 'wizardDone';
+const PINS_KEY = 'pins';
+const BALLOT_PASSWORD_KEY = 'ballotPassword';
+
+/** What a crew PIN may do: check-in, pit table, judging. Everything else needs the coordinator PIN. */
+const CREW_COMMANDS = new Set([
+  'setCheckedIn', 'checkInGroup', 'setWeight', 'setInspection', 'updateCar', 'updateRacer', 'addRacer', 'clearCarPhoto', 'clearRacerHeadshot',
+  'setCarSeen', 'setAwardNominee', 'setCarScore', 'addJudge', 'renameJudge', 'removeJudge', 'setAwardWinner', 'addAward', 'setBallot',
+]);
 
 export { lanUrls } from './network.js';
 
@@ -241,6 +249,13 @@ export async function buildApp(
       store.delete(id);
     },
     setWizardDone: (done: boolean) => store.setMeta(WIZARD_KEY, done ? '1' : '0'),
+    setPins: (patch) => {
+      const saved = JSON.parse(store.getMeta(PINS_KEY) ?? '{}') as { coordinator?: string | null; crew?: string | null };
+      const next = { ...saved, ...patch };
+      for (const key of ['coordinator', 'crew'] as const) if (next[key] !== undefined && next[key] !== null && !next[key]!.trim()) next[key] = null;
+      store.setMeta(PINS_KEY, JSON.stringify(next));
+    },
+    setBallotPassword: (password) => store.setMeta(BALLOT_PASSWORD_KEY, password ?? ''),
     undo,
     redo,
     createDerby: (input) => {
@@ -338,14 +353,29 @@ export async function buildApp(
   fastify.addContentTypeParser(/^(image|video)\/.+/, { parseAs: 'buffer' }, (_req, body, done) => done(null, body));
   fastify.addContentTypeParser(['application/zip', 'application/x-zip-compressed', 'application/octet-stream'], { parseAs: 'buffer' }, (_req, body, done) => done(null, body));
 
-  /** Every POST needs the coordinator PIN when one is configured. GETs (screens, media, export) do not. */
-  const requirePin: preHandlerHookHandler = (req, reply, done) => {
-    if (config.pin !== null && req.headers['x-derby-pin'] !== config.pin) {
-      reply.code(401).send({ ok: false, error: 'PIN required.', code: 'unauthorized' });
-      return;
-    }
-    done();
+  /** PINs set on the Setup tab win over the environment. */
+  const pins = (): { coordinator: string | null; crew: string | null } => {
+    const saved = JSON.parse(store.getMeta(PINS_KEY) ?? '{}') as { coordinator?: string | null; crew?: string | null };
+    return { coordinator: saved.coordinator ?? config.pin, crew: saved.crew ?? config.crewPin };
   };
+
+  /**
+   * Every POST needs a PIN when a coordinator PIN is configured. The crew
+   * PIN opens only the check-in, pit and judging commands and the photo and
+   * video uploads; GETs (screens, media, export) are always open.
+   */
+  const requireRole = (crewAllowed: boolean | ((req: { body?: unknown }) => boolean)): preHandlerHookHandler => (req, reply, done) => {
+    const { coordinator, crew } = pins();
+    if (coordinator === null) return done();
+    const given = req.headers['x-derby-pin'];
+    if (given === coordinator) return done();
+    const allowed = typeof crewAllowed === 'function' ? crewAllowed(req) : crewAllowed;
+    if (crew !== null && given === crew && allowed) return done();
+    reply.code(401).send({ ok: false, error: given ? 'That PIN cannot do this.' : 'PIN required.', code: 'unauthorized' });
+  };
+  const requirePin = requireRole(false);
+  const requireCrew = requireRole(true);
+  const requireCommandRole = requireRole((req) => CREW_COMMANDS.has(((req.body as { name?: string } | undefined)?.name) ?? ''));
 
   /** Serve one stored media file, immutable (keys are unique per upload). */
   function serveMedia(route: string, store: MediaStore, notFound: string): void {
@@ -450,7 +480,8 @@ export async function buildApp(
     urls: lanUrls(config.port),
     httpsUrls: tls && config.httpsPort ? lanUrls(config.httpsPort, 'https') : [],
     secureAvailable: tls !== null,
-    pinRequired: config.pin !== null,
+    pinRequired: pins().coordinator !== null,
+    crewPinSet: pins().crew !== null,
     timer: timer.status,
     derbies: store.listDerbies(),
     formats: FORMAT_PRESETS.map((f) => ({ id: f.id, name: f.name, description: f.description })),
@@ -467,7 +498,7 @@ export async function buildApp(
    * Upload one file of the car's photo. `kind` is original, crop (the
    * standardised JPEG) or cutout (the transparent PNG).
    */
-  fastify.post<{ Params: { carId: string }; Querystring: { kind?: string } }>('/api/photos/:carId', { preHandler: requirePin }, async (req, reply) => {
+  fastify.post<{ Params: { carId: string }; Querystring: { kind?: string } }>('/api/photos/:carId', { preHandler: requireCrew }, async (req, reply) => {
     const kind = req.query.kind ?? 'crop';
     if (kind !== 'original' && kind !== 'crop' && kind !== 'cutout') return reply.code(400).send({ ok: false, error: 'Unknown kind.', code: 'bad-args' });
     const ext = photos.extensionFor(req.headers['content-type']);
@@ -514,7 +545,7 @@ export async function buildApp(
   });
 
   /** Upload a scout's video headshot (a few seconds, with sound). */
-  fastify.post<{ Params: { racerId: string } }>('/api/headshots/:racerId', { preHandler: requirePin }, async (req, reply) => {
+  fastify.post<{ Params: { racerId: string } }>('/api/headshots/:racerId', { preHandler: requireCrew }, async (req, reply) => {
     const ext = headshots.extensionFor(req.headers['content-type']);
     if (!ext || !Buffer.isBuffer(req.body) || req.body.length === 0) {
       return reply.code(415).send({ ok: false, error: 'Send a WebM or MP4 clip.', code: 'bad-video' });
@@ -579,7 +610,27 @@ export async function buildApp(
   serveMedia('/api/headshots/:key', headshots, 'No such video.');
   serveMedia('/api/replays/:key', replays, 'No such replay.');
 
-  fastify.post<{ Body: { name?: string; args?: unknown } }>('/api/command', { preHandler: requirePin }, async (req, reply) => {
+  /** A vote from the audience's phone. No PIN; the ballot's own password, if any, instead. */
+  fastify.post<{ Body: { voterId?: unknown; awardId?: unknown; carIds?: unknown; password?: unknown } }>('/api/vote', async (req, reply) => {
+    const body = req.body ?? {};
+    const expected = store.getMeta(BALLOT_PASSWORD_KEY) || null;
+    if (expected && body.password !== expected) return reply.code(401).send({ ok: false, error: 'That is not the voting password.', code: 'unauthorized' });
+    if (typeof body.voterId !== 'string' || typeof body.awardId !== 'string' || !Array.isArray(body.carIds) || !body.carIds.every((c) => typeof c === 'string')) {
+      return reply.code(400).send({ ok: false, error: 'voterId, awardId and carIds are required.', code: 'bad-args' });
+    }
+    try {
+      currentAction = 'vote';
+      engine.castVote(body.voterId, body.awardId, body.carIds as string[]);
+      return { ok: true, result: null };
+    } catch (err) {
+      return sendError(reply, err);
+    } finally {
+      flushBatch();
+      currentAction = null;
+    }
+  });
+
+  fastify.post<{ Body: { name?: string; args?: unknown } }>('/api/command', { preHandler: requireCommandRole }, async (req, reply) => {
     const name = req.body?.name;
     if (typeof name !== 'string') return reply.code(400).send({ ok: false, error: 'Command name missing.', code: 'bad-args' });
     currentAction = name;

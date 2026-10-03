@@ -204,6 +204,8 @@ export function Judges() {
 
           <RubricCard criteria={criteria} judges={judges} />
 
+          <BallotCard awards={judged} />
+
           {speed.length > 0 && (
             <div className="pit-card">
               <h3>Speed awards (from results)</h3>
@@ -292,6 +294,12 @@ export function Judges() {
                 onPick={() => pick(info.car)}
                 onScore={() => setScoringCarId(info.car.id)}
                 onPhoto={() => setPhotoCarId(info.car.id)}
+                onAdHoc={async () => {
+                  const name = prompt(`A one-off award for #${info.number} ${info.racerName}. Name it:`, 'Best Use of the Color Red');
+                  if (!name?.trim()) return;
+                  const award = await run<Award>('addAward', { name: name.trim(), kind: 'custom', groupId: null });
+                  if (award) await run('setAwardWinner', { awardId: award.id, carId: info.car.id });
+                }}
               />
             ))}
             {cars.length === 0 && <p className="jud-empty">No cars match.</p>}
@@ -326,6 +334,7 @@ function CarCard({
   onPick,
   onScore,
   onPhoto,
+  onAdHoc,
 }: {
   info: CarInfo;
   selected: Award | null;
@@ -335,6 +344,7 @@ function CarCard({
   onPick: () => void;
   onScore: () => void;
   onPhoto: () => void;
+  onAdHoc: () => void;
 }) {
   const { view, run } = useDerby();
   if (!view) return null;
@@ -377,7 +387,85 @@ function CarCard({
         <button className="jud-tool" onClick={onPhoto} title="Take or replace photos">
           📷
         </button>
+        <button className="jud-tool" onClick={onAdHoc} title="Invent a one-off award for this car">
+          + Award
+        </button>
       </div>
+    </div>
+  );
+}
+
+/** People's choice: which awards the audience votes on, from their phones, and the tally. */
+function BallotCard({ awards }: { awards: Award[] }) {
+  const { state, view, run } = useDerby();
+  const [password, setPassword] = useState('');
+  if (!state || !view) return null;
+  const ballot = state.ballot;
+  const toggle = (id: string) => run('setBallot', { patch: { awardIds: ballot.awardIds.includes(id) ? ballot.awardIds.filter((a) => a !== id) : [...ballot.awardIds, id] } });
+  return (
+    <div className="pit-card">
+      <h3>People's choice</h3>
+      <p className="jud-muted jud-help">Let the audience vote from their phones (the home page and the welcome slide show the link while voting is open). The tally is a guide; you still pick the winner.</p>
+      {awards.length === 0 && <p className="jud-empty">Add a design award first.</p>}
+      {awards.map((a) => {
+        const on = ballot.awardIds.includes(a.id);
+        const tally = on ? view.voteTally(a.id).slice(0, 5) : [];
+        return (
+          <div key={a.id} className="jud-ballot-award">
+            <label className={`jud-seen ${on ? 'is-on' : ''}`}>
+              <input type="checkbox" checked={on} onChange={() => toggle(a.id)} />
+              {a.name}
+            </label>
+            {on && tally.length > 0 && (
+              <ul className="jud-tally">
+                {tally.map((t) => {
+                  const info = carInfo(state, t.carId);
+                  return (
+                    <li key={t.carId}>
+                      <span>
+                        <b>{t.votes}</b> #{info?.number} {info?.racerName}
+                      </span>
+                      <button className="jud-tool" onClick={() => run('setAwardWinner', { awardId: a.id, carId: t.carId })} disabled={a.carId === t.carId}>
+                        {a.carId === t.carId ? 'Winner' : 'Choose'}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+      {ballot.awardIds.length > 0 && (
+        <>
+          <div className="jud-ballot-row">
+            <label className="jud-muted">
+              Picks per person{' '}
+              <select value={ballot.votesPerAward} onChange={(e) => run('setBallot', { patch: { votesPerAward: Number(e.target.value) } })}>
+                {[1, 2, 3].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className="jud-muted">{view.voterCount()} voted</span>
+          </div>
+          <form
+            className="jud-custom"
+            onSubmit={(e) => {
+              e.preventDefault();
+              run('setBallot', { patch: { password: password.trim() || null } }).then(() => setPassword(''));
+            }}
+          >
+            <input placeholder={ballot.passwordRequired ? 'Password is set; type a new one or clear' : 'Voting password (optional)'} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <button className="pbtn">{password.trim() ? 'Set' : ballot.passwordRequired ? 'Clear' : 'Set'}</button>
+          </form>
+          <button className={`pbtn ${ballot.open ? '' : 'pbtn-primary'}`} onClick={() => run('setBallot', { patch: { open: !ballot.open } })}>
+            {ballot.open ? 'Close voting' : 'Open voting'}
+          </button>
+        </>
+      )}
     </div>
   );
 }

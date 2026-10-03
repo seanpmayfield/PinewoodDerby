@@ -183,6 +183,79 @@ export function PrintLabels() {
   );
 }
 
+/** Looking back: is any lane fast or slow, and how quickly did the crew turn heats around. */
+export function PrintRetrospective() {
+  const { state, view } = useDerby();
+  if (!state || !view) return null;
+  const bias = view.laneBias();
+  const timeline = view.heatTimeline();
+  const gaps = timeline.map((e) => e.gapSec).filter((g): g is number => g !== null && g < 1800);
+  const avgGap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null;
+  const fmtGap = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+  return (
+    <Shell title="Looking back" subtitle={`${bias.heats} heats recorded${avgGap !== null ? ` · ${fmtGap(avgGap)} between heats on average` : ''}`}>
+      <h2 className="print-h2">Lane bias</h2>
+      <p className="print-small">
+        Each lane's average time against the other lanes', in standard errors. Beyond two either way the lane is called fast or slow; a few heats per lane are needed before it means anything.
+      </p>
+      <table className="print-table">
+        <thead>
+          <tr>
+            <th>Lane</th>
+            <th className="print-right">Runs</th>
+            <th className="print-right">Average</th>
+            <th className="print-right">vs others</th>
+            <th className="print-right">z</th>
+            <th>Verdict</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bias.lanes.map((l) => (
+            <tr key={l.lane}>
+              <td className="print-num">{l.lane}</td>
+              <td className="print-right">{l.runs}</td>
+              <td className="print-right">{l.meanSec === null ? '' : `${l.meanSec.toFixed(4)} s`}</td>
+              <td className="print-right">{l.diffSec === null ? '' : `${l.diffSec > 0 ? '+' : ''}${l.diffSec.toFixed(4)} s`}</td>
+              <td className="print-right">{l.z === null ? '' : l.z.toFixed(2)}</td>
+              <td>{l.verdict === 'few' ? 'too few runs' : l.verdict === 'even' ? 'even' : l.verdict}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <h2 className="print-h2">Timeline</h2>
+      <table className="print-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Round</th>
+            <th>Heat</th>
+            <th>Source</th>
+            <th className="print-right">Since previous</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {timeline.map((e) => (
+            <tr key={e.heat.id} className={e.voided ? 'print-muted' : ''}>
+              <td>{new Date(e.recordedAt).toLocaleTimeString()}</td>
+              <td>{e.roundName}</td>
+              <td className="print-num">{e.position}</td>
+              <td>{e.heat.result?.source}</td>
+              <td className="print-right">{e.gapSec === null ? '' : fmtGap(e.gapSec)}</td>
+              <td>{e.voided ? `voided: ${e.heat.voidReason ?? 're-run'}` : e.heat.rerunOf ? 're-run' : ''}</td>
+            </tr>
+          ))}
+          {timeline.length === 0 && (
+            <tr>
+              <td colSpan={6}>No heats recorded yet.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </Shell>
+  );
+}
+
 /** Every round's standings and the awards on one document: the record of the day. Print to PDF from the browser. */
 export function PrintResults() {
   const { state, view } = useDerby();
@@ -293,7 +366,7 @@ function Certificate({ award, date }: { award: Award; date: string }) {
       <div className="cert-frame">
         {state.branding.logo && <img className="cert-logo" src={brandingUrl(state.branding.logo)} alt="" />}
         <div className="cert-event">{state.name}</div>
-        <div className="cert-kicker">{award.kind === 'speed' ? 'Speed award' : award.kind === 'design' ? 'Design award' : 'Award'}</div>
+        <div className="cert-kicker">{award.kind === 'speed' ? 'Speed award' : award.kind === 'design' ? 'Design award' : 'Special award'}</div>
         <h2 className="cert-award">{award.name}</h2>
         <div className="cert-scope">{groupPath(state, award.groupId)}</div>
         <div className="cert-presented">presented to</div>

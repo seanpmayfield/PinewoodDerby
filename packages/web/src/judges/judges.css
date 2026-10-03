@@ -589,3 +589,88 @@
 .jud-tool small {
   font-weight: 500;
 }
+
+/* ---- people's choice ----------------------------------------------------------- */
+
+.jud-ballot-award {
+  margin-bottom: 0.4rem;
+}
+
+.jud-tally {
+  list-style: none;
+  margin: 0.2rem 0 0.4rem 1.6rem;
+  padding: 0;
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.jud-tally li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.jud-ballot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+}
+
+.jud-ballot-row select {
+  font: inherit;
+}
+
+/* ---- voting page ----------------------------------------------------------------- */
+
+.vote-intro {
+  margin: 0 0 0.8rem;
+}
+
+.vote-password {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.vote-password input {
+  font: inherit;
+  padding: 0.6rem;
+  border: 1px solid var(--p-line);
+  border-radius: 10px;
+}
+
+.vote-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+
+.vote-car {
+  text-align: left;
+  background: #fff;
+  border: 2px solid var(--p-line);
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.vote-car.is-on {
+  border-color: #e0a800;
+  background: #fff8dc;
+}
+
+.vote-car-body {
+  display: grid;
+  padding: 0.4rem 0.6rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+.vote-car-body small {
+  color: var(--p-muted);
+}

@@ -16,6 +16,7 @@ const config: ServerConfig = {
   tlsDir: '',
   dataDir: ':memory:',
   pin: null,
+  crewPin: null,
   timer: 'simulator',
   serialPort: null,
   simulatorSpeed: 0,
@@ -378,6 +379,45 @@ describe('server', () => {
     expect(after.id).toBe(before.id);
     expect(after.name).toBe('Fine');
     expect(after.cars[0]!.number).toBe(car.number);
+  });
+
+  it('crew PIN opens check-in and judging but not race control; coordinator PIN opens all', async () => {
+    const app = await start({ pin: '1234', crewPin: '0000' });
+    await command(app, 'seedDemo', {}, { 'x-derby-pin': '1234' });
+    const racer = app.engine().state.racers[0]!;
+    expect((await command(app, 'setCheckedIn', { racerId: racer.id, checkedIn: false })).status).toBe(401);
+    expect((await command(app, 'setCheckedIn', { racerId: racer.id, checkedIn: false }, { 'x-derby-pin': '0000' })).status).toBe(200);
+    expect((await command(app, 'startRound', { specKey: 'den' }, { 'x-derby-pin': '0000' })).status).toBe(401);
+    expect((await command(app, 'startRound', { specKey: 'den' }, { 'x-derby-pin': '1234' })).status).toBe(200);
+    // PINs set from the Setup tab replace the environment's, and only the coordinator may set them.
+    expect((await command(app, 'setPins', { patch: { crew: '7777' } }, { 'x-derby-pin': '0000' })).status).toBe(401);
+    expect((await command(app, 'setPins', { patch: { crew: '7777' } }, { 'x-derby-pin': '1234' })).status).toBe(200);
+    expect((await command(app, 'setCheckedIn', { racerId: racer.id, checkedIn: true }, { 'x-derby-pin': '0000' })).status).toBe(401);
+    expect((await command(app, 'setCheckedIn', { racerId: racer.id, checkedIn: true }, { 'x-derby-pin': '7777' })).status).toBe(200);
+    const info = (await app.fastify.inject('/api/info')).json() as { pinRequired: boolean; crewPinSet: boolean };
+    expect(info).toMatchObject({ pinRequired: true, crewPinSet: true });
+  });
+
+  it('takes votes from phones without a PIN, behind the ballot password when one is set', async () => {
+    const app = await start({ pin: '1234' });
+    await command(app, 'seedDemo', {}, { 'x-derby-pin': '1234' });
+    const award = (await command(app, 'addAward', { name: 'Coolest Car', kind: 'design' }, { 'x-derby-pin': '1234' })).body.result as { id: string };
+    const cars = app.engine().state.cars;
+    const vote = (payload: unknown) => app.fastify.inject({ method: 'POST', url: '/api/vote', payload: payload as Record<string, unknown> });
+    expect((await vote({ voterId: 'phone-aaaaaaaa', awardId: award.id, carIds: [cars[0]!.id] })).statusCode).toBe(409);
+    await command(app, 'setBallot', { patch: { awardIds: [award.id], votesPerAward: 2, open: true, password: 'derby' } }, { 'x-derby-pin': '1234' });
+    expect(app.engine().state.ballot.passwordRequired).toBe(true);
+    expect((await vote({ voterId: 'phone-aaaaaaaa', awardId: award.id, carIds: [cars[0]!.id] })).statusCode).toBe(401);
+    expect((await vote({ voterId: 'phone-aaaaaaaa', awardId: award.id, carIds: [cars[0]!.id], password: 'derby' })).statusCode).toBe(200);
+    expect((await vote({ voterId: 'phone-bbbbbbbb', awardId: award.id, carIds: [cars[0]!.id, cars[1]!.id], password: 'derby' })).statusCode).toBe(200);
+    expect((await vote({ voterId: 'bad', awardId: award.id, carIds: [], password: 'derby' })).statusCode).toBe(400);
+    expect(app.engine().voteTally(award.id)).toEqual([
+      { carId: cars[0]!.id, votes: 2 },
+      { carId: cars[1]!.id, votes: 1 },
+    ]);
+    await command(app, 'setBallot', { patch: { password: null, open: false } }, { 'x-derby-pin': '1234' });
+    expect(app.engine().state.ballot.passwordRequired).toBe(false);
+    expect((await vote({ voterId: 'phone-aaaaaaaa', awardId: award.id, carIds: [] })).statusCode).toBe(409);
   });
 
   it('stores the pack logo and sponsor images and exports them', async () => {

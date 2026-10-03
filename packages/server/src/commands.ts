@@ -31,6 +31,10 @@ export interface CommandContext {
   createDerby: (input: { name: string; date?: string; laneCount?: number; formatId?: string; copyRosterFrom?: string }) => DerbyEngine;
   /** Turn the automatic USB backup on or off (remembered). */
   setUsbBackup: (enabled: boolean) => void;
+  /** Coordinator and crew PINs; null clears one. */
+  setPins: (pins: { coordinator?: string | null; crew?: string | null }) => void;
+  /** The voting password, kept out of the broadcast state. */
+  setBallotPassword: (password: string | null) => void;
   loadDerby: (id: string) => DerbyEngine;
   restoreHistory: (historyId: number) => DerbyEngine;
   saveTimerConfig: (config: TimerConfig) => void;
@@ -182,6 +186,7 @@ const COMMANDS: Record<string, Handler> = {
     ctx.engine.updateRacer(str(a.id, 'id'), patchOf<Racer>(a.patch, { firstName: 'string', lastName: 'string', groupId: 'string', rank: 'string', notes: 'string', checkedIn: 'boolean' })),
   removeRacer: (ctx, a) => ctx.engine.removeRacer(str(a.id, 'id')),
   setCheckedIn: (ctx, a) => ctx.engine.setCheckedIn(str(a.racerId, 'racerId'), bool(a.checkedIn, 'checkedIn')),
+  checkInGroup: (ctx, a) => ctx.engine.setGroupCheckedIn(str(a.groupId, 'groupId'), a.checkedIn !== false),
   importRoster: (ctx, a) => {
     const rows: RosterRow[] = Array.isArray(a.rows) ? a.rows : importRosterCsv(str(a.csv, 'csv')).roster;
     const result = ctx.engine.importRoster(rows);
@@ -285,6 +290,21 @@ const COMMANDS: Record<string, Handler> = {
   reorderSponsors: (ctx, a) => {
     if (!Array.isArray(a.ids)) throw new DerbyError('ids must be a list.', 'bad-args');
     ctx.engine.reorderSponsors(a.ids as string[]);
+  },
+  /** Voting set-up. `password` is stored server-side; null clears it. */
+  setBallot: (ctx, a) => {
+    const patch = patchOf<{ open: boolean; awardIds: string[]; votesPerAward: number; password: string | null }>(a.patch ?? {}, { open: 'boolean', awardIds: 'strings', votesPerAward: 'number', password: ['string', 'null'] });
+    const { password, ...rest } = patch;
+    if (password !== undefined) {
+      ctx.setBallotPassword(password && password.trim() ? password.trim() : null);
+      (rest as { passwordRequired?: boolean }).passwordRequired = !!(password && password.trim());
+    }
+    return ctx.engine.setBallot(rest);
+  },
+  /** Set or clear the coordinator and crew PINs (coordinator only). */
+  setPins: (ctx, a) => {
+    const patch = patchOf<{ coordinator: string | null; crew: string | null }>(a.patch ?? {}, { coordinator: ['string', 'null'], crew: ['string', 'null'] });
+    ctx.setPins(patch);
   },
   setAwardNominee: (ctx, a) => ctx.engine.setAwardNominee(str(a.awardId, 'awardId'), str(a.carId, 'carId'), a.nominated !== false),
   setCarSeen: (ctx, a) => ctx.engine.setCarSeen(str(a.carId, 'carId'), a.seen !== false),

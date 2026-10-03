@@ -16,8 +16,10 @@ export interface ServerConfig {
   dataDir: string;
   /** Automatic backup to USB sticks (Windows). */
   usbBackup: boolean;
-  /** Optional PIN that every POST (commands, uploads, import) must carry in the x-derby-pin header. */
+  /** Optional coordinator PIN that every POST (commands, uploads, import) must carry in the x-derby-pin header. The Setup tab can override it. */
   pin: string | null;
+  /** Optional crew PIN that allows only check-in, pit and judging commands. */
+  crewPin: string | null;
   timer: TimerKind;
   /** Serial port for the real timer, e.g. COM3. null = auto-detect. */
   serialPort: string | null;
@@ -43,6 +45,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     dataDir,
     usbBackup: env['DERBY_USB_BACKUP'] !== '0',
     pin: env['DERBY_PIN'] || null,
+    crewPin: env['DERBY_CREW_PIN'] || null,
     timer: env['DERBY_TIMER'] || 'simulator',
     serialPort: env['DERBY_SERIAL_PORT'] || null,
     simulatorSpeed: Number(env['DERBY_SIM_SPEED'] ?? 1),

@@ -354,6 +354,24 @@ export interface Presentation {
   theme: string;
 }
 
+/**
+ * People's-choice voting: the audience picks some design awards from their
+ * phones. One ballot per phone (a random voter id the phone keeps); the
+ * judges still choose the winner, with the tally in front of them. The
+ * optional voting password lives on the server, not here, since the whole
+ * event state is visible to every screen.
+ */
+export interface Ballot {
+  open: boolean;
+  /** Awards up for a vote; speed awards never are. */
+  awardIds: Id[];
+  /** Picks each voter may make per award. */
+  votesPerAward: number;
+  passwordRequired: boolean;
+  /** votes[voterId][awardId] = car ids picked. */
+  votes: Record<string, Record<Id, Id[]>>;
+}
+
 export interface Sponsor {
   id: Id;
   name: string;
@@ -386,6 +404,7 @@ export interface Derby {
   settings: DerbySettings;
   presentation: Presentation;
   branding: Branding;
+  ballot: Ballot;
 }
 
 export const DEFAULT_SETTINGS: DerbySettings = {
@@ -427,5 +446,12 @@ export function normalizeDerby(state: Derby): Derby {
     settings: { ...DEFAULT_SETTINGS, ...(state.settings ?? {}) },
     presentation: { ...DEFAULT_PRESENTATION, ...(state.presentation ?? {}), revealedAwardIds: [...(state.presentation?.revealedAwardIds ?? [])] },
     branding: { logo: state.branding?.logo ?? null, sponsors: (state.branding?.sponsors ?? []).map((s) => ({ ...s })) },
+    ballot: {
+      open: state.ballot?.open ?? false,
+      awardIds: [...(state.ballot?.awardIds ?? [])],
+      votesPerAward: state.ballot?.votesPerAward ?? 1,
+      passwordRequired: state.ballot?.passwordRequired ?? false,
+      votes: Object.fromEntries(Object.entries(state.ballot?.votes ?? {}).map(([voter, byAward]) => [voter, Object.fromEntries(Object.entries(byAward).map(([a, cars]) => [a, [...cars]]))])),
+    },
   };
 }

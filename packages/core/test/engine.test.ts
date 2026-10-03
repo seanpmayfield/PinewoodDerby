@@ -444,6 +444,61 @@ describe('DerbyEngine racing', () => {
     expect(new DerbyEngine(snap).state.branding).toEqual({ logo: null, sponsors: [] });
   });
 
+  it('runs a people\'s-choice ballot and tallies it', () => {
+    const engine = buildPack([3]);
+    const [a, b, c] = engine.state.cars;
+    const award = engine.addAward({ name: 'Coolest Car', kind: 'design' });
+    const speed = engine.addAward({ name: 'Fastest', kind: 'speed', speed: { roundKey: 'den', place: 1 } });
+    expect(() => engine.setBallot({ awardIds: [speed.id] })).toThrow(DerbyError);
+    expect(() => engine.setBallot({ votesPerAward: 9 })).toThrow(DerbyError);
+    engine.setBallot({ awardIds: [award.id], votesPerAward: 2 });
+    expect(() => engine.castVote('phone-aaaaaaaa', award.id, [a!.id])).toThrow(/closed/);
+    engine.setBallot({ open: true });
+    engine.castVote('phone-aaaaaaaa', award.id, [a!.id, b!.id]);
+    engine.castVote('phone-bbbbbbbb', award.id, [a!.id]);
+    expect(() => engine.castVote('phone-cccccccc', award.id, [a!.id, b!.id, c!.id])).toThrow(/at most 2/);
+    expect(() => engine.castVote('x', award.id, [a!.id])).toThrow(/voter/);
+    // A withdrawn car cannot be voted for; a changed mind replaces the earlier picks.
+    engine.withdrawCar(c!.id);
+    expect(() => engine.castVote('phone-dddddddd', award.id, [c!.id])).toThrow(/cannot be voted/);
+    engine.castVote('phone-bbbbbbbb', award.id, [b!.id]);
+    expect(engine.voteTally(award.id)).toEqual([
+      { carId: a!.id, votes: 1 },
+      { carId: b!.id, votes: 2 },
+    ].sort((x, y) => y.votes - x.votes));
+    expect(engine.voterCount()).toBe(2);
+    engine.castVote('phone-bbbbbbbb', award.id, []);
+    expect(engine.voterCount()).toBe(1);
+    expect(engine.ballotCandidates(award.id).map((x) => x.id)).toEqual([a!.id, b!.id]);
+  });
+
+  it('checks a whole den in at once and reports lane bias and the heat timeline', () => {
+    const engine = buildPack([4, 4]);
+    const den = engine.state.groups.find((g) => g.kind === 'den')!;
+    for (const r of engine.state.racers) engine.setCheckedIn(r.id, false);
+    expect(engine.setGroupCheckedIn(den.id, true)).toBe(4);
+    expect(engine.setGroupCheckedIn(den.id, true)).toBe(0);
+    for (const r of engine.state.racers) engine.setCheckedIn(r.id, true);
+    const rounds = engine.startRound('den');
+    // Lane 1 is made slow by a tenth of a second in every heat.
+    let t = 0;
+    for (const round of rounds) {
+      for (const heat of engine.heatOrder(round)) {
+        const times = heat.lanes.map((carId, i) => ({ lane: i + 1, timeSec: carId ? 3 + (i === 0 ? 0.1 : 0) + ((t++ * 7) % 5) / 1000 : null }));
+        engine.finishHeat(heat.id, times, 'manual');
+      }
+    }
+    const bias = engine.laneBias();
+    expect(bias.heats).toBe(8);
+    expect(bias.lanes[0]!.verdict).toBe('slow');
+    expect(bias.lanes.slice(1).every((l) => l.verdict === 'even' || l.verdict === 'fast')).toBe(true);
+    const timeline = engine.heatTimeline();
+    expect(timeline).toHaveLength(8);
+    expect(timeline[0]!.gapSec).toBeNull();
+    expect(timeline[1]!.gapSec).not.toBeNull();
+    expect(timeline.every((e) => e.position >= 1 && !e.voided)).toBe(true);
+  });
+
   it('snapshots are independent copies', () => {
     const engine = buildPack([2]);
     const snap = engine.snapshot();

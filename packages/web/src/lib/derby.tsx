@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { DerbyEngine, type Derby } from '@derby/core';
-import { command as sendCommand, openConnection } from './connection.ts';
+import { command as sendCommand, openConnection, setPin } from './connection.ts';
 import type { BackupStatus, ServerMessage, TimerStatus, UndoInfo } from './types.ts';
 import { recordEvent } from './errors.ts';
 
@@ -78,6 +78,19 @@ export function DerbyProvider({ children }: { children: ReactNode }) {
       try {
         return await sendCommand<T>(name, args);
       } catch (err) {
+        // A PIN problem: ask once, remember the answer on this device, and try again.
+        if (err instanceof Error && (err as { code?: string }).code === 'unauthorized') {
+          const pin = window.prompt(`${err.message} Enter the PIN for this screen:`);
+          if (pin) {
+            setPin(pin);
+            try {
+              return await sendCommand<T>(name, args);
+            } catch (again) {
+              notify('error', again instanceof Error ? again.message : String(again));
+              return undefined;
+            }
+          }
+        }
         notify('error', err instanceof Error ? err.message : String(err));
         return undefined;
       }

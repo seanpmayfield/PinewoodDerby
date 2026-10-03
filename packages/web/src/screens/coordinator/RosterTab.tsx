@@ -178,7 +178,24 @@ function GroupRow({ group, count, selected, onSelect }: { group: Group; count: n
         {group.name}
         {group.kind === 'class' && <span className="muted small"> (class)</span>}
       </span>
-      <span className="muted small">{count}</span>
+      <span className="muted small">
+        {count}
+        {selected && count > 0 && (
+          <>
+            {' '}
+            <span
+              className="link-sm"
+              role="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm(`Check in everyone in ${group.name}?`)) void run('checkInGroup', { groupId: group.id, checkedIn: true });
+              }}
+            >
+              check in all
+            </span>
+          </>
+        )}
+      </span>
     </button>
   );
 }

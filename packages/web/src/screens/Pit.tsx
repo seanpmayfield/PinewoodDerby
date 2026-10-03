@@ -21,6 +21,7 @@ export function Pit() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'todo' | 'in'>('all');
+  const [den, setDen] = useState<string>('all');
   const [adding, setAdding] = useState(false);
   const [scanning, setScanning] = useState(false);
 
@@ -43,9 +44,10 @@ export function Pit() {
       .map((car) => ({ car, racer: state.racers.find((r) => r.id === car.racerId) }))
       .filter((r): r is { car: Car; racer: Racer } => !!r.racer && !r.car.withdrawn)
       .filter(({ racer }) => (filter === 'in' ? racer.checkedIn : filter === 'todo' ? !racer.checkedIn : true))
+      .filter(({ car, racer }) => den === 'all' || (car.groupId ?? racer.groupId) === den)
       .filter(({ car, racer }) => !q || `${racer.firstName} ${racer.lastName} ${car.number} ${car.name ?? ''}`.toLowerCase().includes(q) || parseCarCode(q) === car.number)
       .sort((a, b) => a.car.number - b.car.number);
-  }, [state, search, filter]);
+  }, [state, search, filter, den]);
 
   if (!state) return <div className="pit pit-loading">Connecting…</div>;
 
@@ -120,6 +122,28 @@ export function Pit() {
               {f === 'all' ? 'All' : f === 'todo' ? 'Not here yet' : 'Checked in'}
             </button>
           ))}
+          <select className="pit-chip pit-den" value={den} onChange={(e) => setDen(e.target.value)} aria-label="Den">
+            <option value="all">Every den</option>
+            {state.groups
+              .filter((g) => g.kind !== 'pack')
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+          </select>
+          {den !== 'all' && rows.some(({ racer }) => !racer.checkedIn) && (
+            <button
+              className="pit-chip"
+              onClick={() => {
+                const name = state.groups.find((g) => g.id === den)?.name ?? 'this den';
+                if (confirm(`Check in everyone in ${name} who is not checked in yet?`)) void run('checkInGroup', { groupId: den, checkedIn: true });
+              }}
+            >
+              Check in all of them
+            </button>
+          )}
         </div>
       </div>
 

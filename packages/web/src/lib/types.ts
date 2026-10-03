@@ -76,6 +76,7 @@ export interface ServerInfo {
   httpsUrls: string[];
   secureAvailable: boolean;
   pinRequired: boolean;
+  crewPinSet: boolean;
   timer: TimerStatus;
   derbies: { id: string; name: string; date: string; updatedAt: string }[];
   formats: { id: string; name: string; description: string }[];
