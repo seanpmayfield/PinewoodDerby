@@ -134,9 +134,10 @@ export function RaceTab() {
     }
   };
 
+  const firstRun = useFirstRun();
   return (
-    <main className="race">
-      <FirstRunBanner />
+    <main className={`race ${firstRun ? 'has-first-run' : ''}`}>
+      <FirstRunBanner show={firstRun} />
       <ShowStrip onHelp={() => setHelpOpen(true)} />
       <aside className="panel rounds">
         <h2>Rounds</h2>
@@ -452,14 +453,19 @@ function ShortcutHelp({ laneCount, onClose }: { laneCount: number; onClose: () =
   );
 }
 
-/** Points a fresh install at the setup wizard until it has been completed once. */
-function FirstRunBanner() {
+/** True on a fresh install until the setup wizard has been completed once (or racing has clearly started). */
+function useFirstRun(): boolean {
   const { state } = useDerby();
   const [done, setDone] = useState<boolean | null>(null);
   useEffect(() => {
     fetchInfo().then((i) => setDone(i.wizardDone)).catch(() => setDone(true));
   }, [state?.id]);
-  if (done !== false || (state && state.racers.length > 0 && state.rounds.length > 0)) return null;
+  return done === false && !(state && state.racers.length > 0 && state.rounds.length > 0);
+}
+
+/** Points a fresh install at the setup wizard. */
+function FirstRunBanner({ show }: { show: boolean }) {
+  if (!show) return null;
   return (
     <div className="first-run">
       <span>

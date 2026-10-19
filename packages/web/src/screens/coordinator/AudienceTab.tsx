@@ -139,6 +139,10 @@ export function AudienceTab() {
           <input type="checkbox" checked={p.soundEnabled} onChange={(e) => run('setPresentation', { patch: { soundEnabled: e.target.checked } })} />
           <span>Sound effects on the audience screen</span>
         </label>
+        <label className="field check">
+          <input type="checkbox" checked={p.effects === 'light'} onChange={(e) => run('setPresentation', { patch: { effects: e.target.checked ? 'light' : 'full' } })} />
+          <span>Reduced effects (no blur, glow or moving backgrounds; for an older or slower projector laptop)</span>
+        </label>
       </section>
 
       <section className="panel">

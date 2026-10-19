@@ -184,7 +184,7 @@
   position: relative;
 }
 
-.aud-welcome:not(:has(.aud-carousel)) {
+.aud-welcome:not(.has-carousel) {
   grid-template-rows: auto;
 }
 
@@ -291,6 +291,7 @@
   content: '';
   position: absolute;
   inset: 0;
+  background: radial-gradient(400px 200px at 50% -20%, rgba(255, 255, 255, 0.12), transparent 70%);
   background: radial-gradient(400px 200px at 50% -20%, color-mix(in srgb, var(--lane) 35%, transparent), transparent 70%);
   pointer-events: none;
 }
@@ -1020,6 +1021,7 @@
   background-size: 200% 100%, auto;
   color: #fff;
   border: 3px solid #fff;
+  box-shadow: 0 0 0 4px var(--a-accent), 0 0 60px rgba(255, 255, 255, 0.35);
   box-shadow: 0 0 0 4px var(--a-accent), 0 0 60px color-mix(in srgb, var(--a-accent) 60%, transparent);
   animation: aud-band-stripes 1.2s linear infinite, aud-band-throb 1.4s ease-in-out infinite;
   overflow: hidden;
@@ -1112,6 +1114,7 @@
 .aud-hype-stripes {
   position: absolute;
   inset: 0;
+  background: repeating-linear-gradient(115deg, transparent 0 34px, rgba(255, 255, 255, 0.18) 34px 68px);
   background: repeating-linear-gradient(115deg, transparent 0 34px, color-mix(in srgb, var(--hype) 22%, transparent) 34px 40px);
   animation: aud-stripes 1.6s linear infinite;
 }
@@ -1125,6 +1128,7 @@
 .aud-hype-streaks {
   position: absolute;
   inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.35) 50%, transparent 100%) 0 0 / 50% 100% no-repeat;
   background:
     linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--hype) 45%, transparent) 50%, transparent 100%) 0 20% / 60% 3px no-repeat,
     linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.5) 50%, transparent 100%) 0 45% / 40% 2px no-repeat,
@@ -1249,6 +1253,7 @@
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
   border: 1px solid var(--a-line);
   border-top: 10px solid var(--lane);
+  box-shadow: 0 0 80px rgba(255, 255, 255, 0.25);
   box-shadow: 0 0 80px color-mix(in srgb, var(--lane) 30%, transparent);
   animation: aud-reveal 0.7s var(--a-ease);
   min-height: 0;
@@ -1370,6 +1375,7 @@
 }
 
 .aud-strip-lane.is-spot {
+  background: rgba(255, 255, 255, 0.12);
   background: color-mix(in srgb, var(--lane) 18%, transparent);
   border-color: var(--lane);
 }
@@ -1724,15 +1730,15 @@
   object-position: bottom;
 }
 
-.aud-welcome:has(.aud-carousel) .aud-title {
+.aud-welcome.has-carousel .aud-title {
   font-size: clamp(2.4rem, 5.2vw, 5.2rem);
 }
 
-.aud-welcome:has(.aud-carousel) .aud-subtitle {
+.aud-welcome.has-carousel .aud-subtitle {
   font-size: clamp(1rem, 1.8vw, 1.6rem);
 }
 
-.aud-welcome:has(.aud-carousel) .aud-message {
+.aud-welcome.has-carousel .aud-message {
   margin-top: 0.8rem;
   font-size: clamp(1rem, 1.6vw, 1.4rem);
 }
@@ -1819,7 +1825,7 @@
   margin: 0 auto 1.5vh;
 }
 
-.aud-welcome:has(.aud-carousel) .aud-logo {
+.aud-welcome.has-carousel .aud-logo {
   max-height: 10vh;
 }
 
@@ -1933,4 +1939,54 @@
 .aud-vote-url {
   font-weight: 700;
   font-size: clamp(0.8rem, 1.2vw, 1.2rem);
+}
+
+/* ---- reduced effects ----------------------------------------------------------
+   For an older or slower projector laptop, or anyone who asks for reduced motion:
+   no blur or glow filters, no endlessly moving backgrounds, calmer shadows. The
+   short entrance animations stay. */
+
+.aud.is-light .aud-welcome-flag,
+.aud.is-light .aud-ticker-run,
+.aud.is-light .aud-intro-burst,
+.aud.is-light .aud-hype-stripes,
+.aud.is-light .aud-hype-streaks,
+.aud.is-light .aud-spot-photo,
+.aud.is-light .aud-spot-hint,
+.aud.is-light .aud-callout-tag,
+.aud.is-light .aud-callout-band {
+  animation: none;
+}
+
+.aud.is-light .aud-welcome-flag,
+.aud.is-light .aud-intro-burst,
+.aud.is-light .aud-hype-streaks {
+  display: none;
+}
+
+.aud.is-light [class^='aud-'],
+.aud.is-light [class*=' aud-'] {
+  filter: none;
+  backdrop-filter: none;
+  text-shadow: none;
+}
+
+.aud.is-light .aud-portrait,
+.aud.is-light .aud-spot-photo img,
+.aud.is-light .aud-podium img {
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aud .aud-welcome-flag,
+  .aud .aud-ticker-run,
+  .aud .aud-intro-burst,
+  .aud .aud-hype-stripes,
+  .aud .aud-hype-streaks,
+  .aud .aud-spot-photo,
+  .aud .aud-spot-hint,
+  .aud .aud-callout-tag,
+  .aud .aud-callout-band {
+    animation: none;
+  }
 }

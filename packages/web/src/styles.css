@@ -1281,7 +1281,7 @@ textarea {
   margin-bottom: -0.25rem;
 }
 
-.race:has(.first-run) {
+.race.has-first-run {
   grid-template-areas:
     'first first first'
     'show show show'
@@ -1289,7 +1289,7 @@ textarea {
     'history history history';
 }
 
-.race:has(.first-run) .first-run {
+.race.has-first-run .first-run {
   grid-area: first;
 }
 

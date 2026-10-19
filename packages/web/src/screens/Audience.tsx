@@ -81,7 +81,7 @@ export function Audience() {
   if (!state || !view || !mode) return <div className="aud aud-loading">Connecting…</div>;
 
   return (
-    <div className="aud" data-theme={state.presentation.theme || DEFAULT_THEME} onDoubleClick={() => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.()}>
+    <div className={`aud ${state.presentation.effects === 'light' ? 'is-light' : ''}`} data-theme={state.presentation.theme || DEFAULT_THEME} onDoubleClick={() => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.()}>
       <header className="aud-header">
         <div className="aud-header-left">
           <span className="aud-flag" />
@@ -110,7 +110,7 @@ export function Audience() {
       </main>
 
       <Ticker />
-      <Confetti burst={burst} intensity={mode.kind === 'awards' ? 1.6 : 0.6} />
+      <Confetti burst={burst} intensity={(mode.kind === 'awards' ? 1.6 : 0.6) * (state.presentation.effects === 'light' ? 0.3 : 1)} />
 
       {!started && (
         <button className="aud-start" onClick={start}>

@@ -5,8 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f1420" />
     <title>Pinewood Derby</title>
+    <style>
+      #too-old {
+        display: none;
+        font-family: Segoe UI, Arial, sans-serif;
+        max-width: 40em;
+        margin: 15vh auto;
+        padding: 2rem;
+        background: #fff6cc;
+        border: 2px solid #e0a800;
+        border-radius: 12px;
+        color: #0b2a5b;
+        line-height: 1.5;
+      }
+    </style>
   </head>
   <body>
+    <div id="too-old">
+      <h1 style="margin-top: 0">This browser is too old for the derby screens</h1>
+      <p>Update Microsoft Edge (Settings &rsaquo; About Microsoft Edge) or install Chrome, then open this page again. The screens need a browser from 2022 or later.</p>
+      <p style="font-size: 0.85em; color: #5a7395" id="too-old-ua"></p>
+    </div>
+    <script>
+      // Plain script on purpose: it has to run where the app bundle cannot.
+      (function () {
+        var ok = false;
+        try {
+          ok = 'noModule' in HTMLScriptElement.prototype && window.CSS && CSS.supports('aspect-ratio: 1') && CSS.supports('inset: 0') && typeof Promise.allSettled === 'function';
+        } catch (e) {}
+        if (!ok) {
+          document.getElementById('too-old').style.display = 'block';
+          document.getElementById('too-old-ua').textContent = navigator.userAgent;
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -17,8 +17,9 @@ export function WelcomeView() {
   const { state } = useDerby();
   if (!state) return null;
   const date = fmtEventDate(state.date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const hasCars = state.cars.some((c) => !c.withdrawn);
   return (
-    <div className="aud-welcome">
+    <div className={`aud-welcome ${hasCars ? 'has-carousel' : ''}`}>
       <div className="aud-welcome-flag" />
       <div className="aud-welcome-body">
         {state.branding.logo && <img className="aud-logo" src={brandingUrl(state.branding.logo)} alt="" />}

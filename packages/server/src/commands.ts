@@ -112,6 +112,7 @@ const PRESENTATION_FIELDS: Record<string, Field | Field[]> = {
   introRoundId: ID,
   introHoldSec: 'number',
   theme: 'string',
+  effects: { oneOf: ['full', 'light'] },
 };
 
 function laneTimes(value: unknown): LaneTimeInput[] {

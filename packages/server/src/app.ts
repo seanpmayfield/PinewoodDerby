@@ -147,6 +147,7 @@ export async function buildApp(
       replayTailSec: p.replayTailSec,
       resultHoldSec: p.resultHoldSec,
       introHoldSec: p.introHoldSec,
+      effects: p.effects,
       message: p.message,
     };
     return restored;

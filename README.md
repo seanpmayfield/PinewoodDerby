@@ -217,6 +217,14 @@ scout's video beside their car. The Race tab's *Show round intro* pins a
 round's card on screen until resumed, and the Audience tab can force the
 welcome slide, standings for any round, or the ceremony.
 
+**Browsers.** The screens are built for Edge or Chrome from 2022 onwards
+(version 100 or later) and Safari 15.4 or later. A browser older than that
+gets a plain page saying so; on a fresh Windows machine, run Windows Update
+or open Edge's *About* page so it updates itself. A fresh Windows 10 image
+can carry an Edge several years old. *Reduced effects* on the Audience tab
+turns off the blur, glow and moving backgrounds for a slow or old projector
+laptop; a browser set to prefer reduced motion gets the same automatically.
+
 **Looks.** The projector has four looks, picked on the Audience tab under
 **Look**. The change is live, so try each one on the projector before the race.
 

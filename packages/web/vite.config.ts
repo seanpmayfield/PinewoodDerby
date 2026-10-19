@@ -13,5 +13,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // A race laptop's browser may be a couple of years behind; keep the bundle runnable there.
+    target: ['es2020', 'chrome100', 'edge100', 'safari15'],
   },
 });

@@ -352,6 +352,8 @@ export interface Presentation {
   introHoldSec: number;
   /** Look of the audience screen; the ids and default live in the web app's theme list. */
   theme: string;
+  /** 'light' drops blur, glow and endless motion for a slow or old projector laptop. */
+  effects: 'full' | 'light';
 }
 
 /**
@@ -432,6 +434,7 @@ export const DEFAULT_PRESENTATION: Presentation = {
   introRoundId: null,
   introHoldSec: 10,
   theme: 'cartoon',
+  effects: 'full',
 };
 
 /** Fill in fields added after a derby was saved, so old snapshots keep loading. */
