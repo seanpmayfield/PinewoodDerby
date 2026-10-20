@@ -10,6 +10,7 @@ import { PrintAwards, PrintCertificates, PrintHeats, PrintLabels, PrintResults, 
 import { Vote } from './screens/Vote.tsx';
 import { Notices } from './components/Notices.tsx';
 import { Feedback } from './components/Feedback.tsx';
+import { Diagnostics } from './components/Diagnostics.tsx';
 
 export function App() {
   return (
@@ -35,6 +36,7 @@ export function App() {
       </Routes>
       <Notices />
       <Feedback />
+      <Diagnostics />
     </>
   );
 }

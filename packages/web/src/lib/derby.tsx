@@ -3,6 +3,7 @@ import { DerbyEngine, type Derby } from '@derby/core';
 import { command as sendCommand, openConnection, setPin } from './connection.ts';
 import type { BackupStatus, ServerMessage, TimerStatus, UndoInfo } from './types.ts';
 import { recordEvent } from './errors.ts';
+import { record as recordDiag } from './diag.ts';
 
 export interface Notice {
   id: number;
@@ -69,7 +70,10 @@ export function DerbyProvider({ children }: { children: ReactNode }) {
         else if (message.build !== loadedBuild.current) window.location.reload();
       }
       else notify(message.level, message.message);
-    }, setConnected);
+    }, (up) => {
+      recordDiag('ws', up ? 'connected to the server' : 'lost the server connection');
+      setConnected(up);
+    });
     return () => connection.close();
   }, [notify]);
 
@@ -78,6 +82,7 @@ export function DerbyProvider({ children }: { children: ReactNode }) {
       try {
         return await sendCommand<T>(name, args);
       } catch (err) {
+        recordDiag('error', `command ${name} failed: ${err instanceof Error ? err.message : String(err)}`);
         // A PIN problem: ask once, remember the answer on this device, and try again.
         if (err instanceof Error && (err as { code?: string }).code === 'unauthorized') {
           const pin = window.prompt(`${err.message} Enter the PIN for this screen:`);

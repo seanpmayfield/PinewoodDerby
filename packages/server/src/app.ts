@@ -6,7 +6,7 @@ import http from 'node:http';
 import https from 'node:https';
 import os from 'node:os';
 import path from 'node:path';
-import { statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { DerbyEngine, DerbyError, findPreset, findProfile, FORMAT_PRESETS, type Derby } from '@derby/core';
 import type { ServerConfig } from './config.js';
 import { DerbyStore, type HistoryEntry } from './store.js';
@@ -437,6 +437,33 @@ export async function buildApp(
     platform: `${os.platform()} ${os.release()}`,
     uptimeSec: Math.round(process.uptime()),
   }));
+
+  /**
+   * Device reports from the hidden diagnostics panel: a phone or screen that
+   * is misbehaving posts its log here so the race laptop keeps a copy under
+   * data/reports, where the developer can collect them.
+   */
+  const reportsDir = path.join(config.dataDir, 'reports');
+  const reportName = (file: string) => /^[\w.-]{1,80}\.txt$/.test(file);
+  fastify.post<{ Querystring: { device?: string } }>('/api/diag-report', { bodyLimit: 4 * 1024 * 1024 }, async (req, reply) => {
+    const text = typeof req.body === 'string' ? req.body : '';
+    if (!text.trim()) return reply.code(400).send({ ok: false, error: 'Empty report.' });
+    const device = /^[\w-]{1,32}$/.test(req.query.device ?? '') ? req.query.device! : 'device';
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const file = `${stamp}-${device}.txt`;
+    mkdirSync(reportsDir, { recursive: true });
+    writeFileSync(path.join(reportsDir, file), text, 'utf8');
+    return { ok: true, result: { file, path: path.join(reportsDir, file) } };
+  });
+  fastify.get('/api/diag-reports', { preHandler: requirePin }, async () => {
+    if (!existsSync(reportsDir)) return { ok: true, result: [] };
+    const files = readdirSync(reportsDir).filter(reportName).sort().reverse();
+    return { ok: true, result: files.map((file) => ({ file, size: statSync(path.join(reportsDir, file)).size })) };
+  });
+  fastify.get<{ Params: { file: string } }>('/api/diag-reports/:file', { preHandler: requirePin }, async (req, reply) => {
+    if (!reportName(req.params.file) || !existsSync(path.join(reportsDir, req.params.file))) return reply.code(404).send({ ok: false, error: 'No such report.' });
+    return reply.type('text/plain; charset=utf-8').send(readFileSync(path.join(reportsDir, req.params.file), 'utf8'));
+  });
 
   /** The local CA root, for phones to trust once. */
   fastify.get('/ca.pem', async (_req, reply) => {

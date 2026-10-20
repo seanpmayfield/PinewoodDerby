@@ -49,6 +49,31 @@ and any errors from the last few minutes. Screenshots can be attached to the
 email by hand. *Copy text instead* puts the same text on the clipboard for
 devices without a mail app.
 
+### Hidden diagnostics panel
+
+For testing a fresh install, every screen also has a diagnostics panel that
+stays out of sight until asked for: press **Ctrl+Shift+D**, tap the *Report
+feedback* button five times quickly (phones), or open any page with `#diag`
+on the end of the address. Once open it stays open across screens and
+reloads on that device until closed.
+
+The panel shows what this browser is and can do (user agent, screen, GPU,
+and a pass/fail list of the CSS and media features the screens rely on, plus
+which of the fonts the looks ask for are installed) and keeps a running log
+while you work: script errors, failed images and videos, warnings, lost and
+regained server connections, failed commands, and every screen you visit.
+Type what you see and press Enter to add a note at that moment. *Looks wrong
+here* records the program's state and the position, size, mask, filter,
+animation and font of every element on the screen, so a broken layout can be
+read from text. *Measure smoothness* samples the frame rate for three
+seconds.
+
+*Send to race computer* saves the whole report as a text file under
+`reports\` in the data folder (`C:\ProgramData\Pinewood Derby\reports` on an
+installed copy); *Copy* and *Download* keep it on the device instead. The
+coordinator can also list and read saved reports at `/api/diag-reports`.
+Paste the report to the developer.
+
 ## Race day
 
 1. **Network.** Everything talks over one local Wi-Fi network; no internet is
@@ -568,6 +593,9 @@ live timer and backup status, so nothing polls. Mutations go through
 `POST /api/photos/:carId`, `/api/replays/:heatId` and `/api/headshots/:racerId`,
 served back from the same paths by key. `GET /api/state`, `/api/info`,
 `/api/diagnostics`, `/api/history` and `/api/export`; `POST /api/import`.
+`POST /api/diag-report` (text body) saves a device's diagnostics report under
+`reports/`; `GET /api/diag-reports` and `/api/diag-reports/:file` read them
+back with the coordinator PIN.
 
 ### Design notes
 

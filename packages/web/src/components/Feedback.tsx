@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { Derby, DerbyEngine } from '@derby/core';
 import { useDerby } from '../lib/derby.tsx';
@@ -28,6 +28,7 @@ export function Feedback() {
   const [diag, setDiag] = useState<Diagnostics | null>(null);
   const [copied, setCopied] = useState(false);
   const [opened, setOpened] = useState(false);
+  const taps = useRef<number[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,9 +61,22 @@ export function Feedback() {
     }
   };
 
+  // Five quick taps on the button open the hidden diagnostics panel instead (phones have no Ctrl+Shift+D).
+  const tap = () => {
+    const now = Date.now();
+    taps.current = [...taps.current.filter((t) => now - t < 2500), now];
+    if (taps.current.length >= 5) {
+      taps.current = [];
+      setOpen(false);
+      window.dispatchEvent(new CustomEvent('derby:diagnostics'));
+      return;
+    }
+    setOpen(true);
+  };
+
   return (
     <>
-      <button className="fb-button" onClick={() => setOpen(true)} title="Report an issue, comment or suggestion">
+      <button className="fb-button" onClick={tap} title="Report an issue, comment or suggestion">
         Report feedback
       </button>
       {open && (
@@ -127,7 +141,7 @@ function screenName(pathname: string): string {
 
 const yn = (v: unknown) => (v ? 'yes' : 'no');
 
-function describe(state: Derby | null, view: DerbyEngine | null, timer: TimerStatus | null, diag: Diagnostics | null, pathname: string, search: string): string {
+export function describe(state: Derby | null, view: DerbyEngine | null, timer: TimerStatus | null, diag: Diagnostics | null, pathname: string, search: string): string {
   const lines: string[] = [];
   lines.push(`when: ${new Date().toISOString()} (${Intl.DateTimeFormat().resolvedOptions().timeZone})`);
   lines.push(`screen: ${screenName(pathname)} (${pathname}${search})`);

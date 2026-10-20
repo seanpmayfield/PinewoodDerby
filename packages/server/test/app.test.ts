@@ -37,7 +37,7 @@ afterEach(async () => {
 async function start(overrides: Partial<ServerConfig> = {}): Promise<App> {
   photoDir = mkdtempSync(path.join(tmpdir(), 'derby-photos-'));
   app = await buildApp(
-    { ...config, ...overrides },
+    { ...config, dataDir: photoDir, ...overrides },
     {
       store: new DerbyStore(':memory:'),
       photos: new PhotoStore(path.join(photoDir, 'photos')),
@@ -256,6 +256,22 @@ describe('server', () => {
     await command(app, 'setWizardDone', { done: true });
     expect(((await app.fastify.inject('/api/info')).json() as { wizardDone: boolean }).wizardDone).toBe(true);
     ws.close();
+  });
+
+  it('keeps device diagnostics reports and lists them for the coordinator', async () => {
+    const app = await start({ pin: '4321' });
+    const empty = await app.fastify.inject({ method: 'POST', url: '/api/diag-report', payload: '  ', headers: { 'content-type': 'text/plain' } });
+    expect(empty.statusCode).toBe(400);
+    const posted = await app.fastify.inject({ method: 'POST', url: '/api/diag-report?device=abc123', payload: 'Pinewood Derby device report\nhello', headers: { 'content-type': 'text/plain' } });
+    expect(posted.statusCode).toBe(200);
+    const file = (posted.json() as { result: { file: string } }).result.file;
+    expect(file).toMatch(/-abc123\.txt$/);
+    expect((await app.fastify.inject('/api/diag-reports')).statusCode).toBe(401);
+    const list = (await app.fastify.inject({ url: '/api/diag-reports', headers: { 'x-derby-pin': '4321' } })).json() as { result: { file: string }[] };
+    expect(list.result.map((r) => r.file)).toEqual([file]);
+    const body = await app.fastify.inject({ url: `/api/diag-reports/${file}`, headers: { 'x-derby-pin': '4321' } });
+    expect(body.body).toContain('hello');
+    expect((await app.fastify.inject({ url: '/api/diag-reports/..%2Fderby.sqlite', headers: { 'x-derby-pin': '4321' } })).statusCode).toBe(404);
   });
 
   it('stores a video headshot against a racer', async () => {

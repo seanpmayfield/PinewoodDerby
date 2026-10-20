@@ -2,7 +2,7 @@
   "name": "pinewood-derby",
   "private": true,
   "license": "MIT",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Cub Scout pinewood derby race management: local server, browser screens for coordinator, audience, pit crew and judges.",
   "workspaces": [
     "packages/*"
@@ -18,7 +18,8 @@
     "tutorial": "node tools/make-tutorial.mjs",
     "theme-previews": "node tools/theme-previews.mjs",
     "screenshot": "node tools/screenshot.mjs",
-    "dry-run": "node tools/dry-run.mjs"
+    "dry-run": "node tools/dry-run.mjs",
+    "installer": "node installer/build.mjs"
   },
   "engines": {
     "node": ">=22"
